@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klaim - Chief of Staff</title>
+<script src="https://unpkg.com/preact@10.19.3/dist/preact.umd.js"></script>
+<script src="https://unpkg.com/preact@10.19.3/hooks/dist/hooks.umd.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;color:#111827;background:#fff;min-height:100vh}
+:root{
+  --border:#e5e7eb;--surface:#f9fafb;--muted:#6b7280;--faint:#9ca3af;
+  --ok-bg:#f0fdf4;--ok:#15803d;--warn-bg:#fffbeb;--warn:#b45309;
+  --err-bg:#fef2f2;--err:#dc2626;--info-bg:#eff6ff;--info:#1d4ed8;
+  --accent:#0d9488
+}
+/* Login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f0fdfa,#eff6ff)}
+.login-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:48px 40px;text-align:center;max-width:400px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.logo-big{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px 20px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:14px;font-weight:500;color:#111827;font-family:inherit;transition:all .2s;margin-bottom:12px}
+.google-btn:hover{background:var(--surface);border-color:#9ca3af}
+.google-btn svg{width:18px;height:18px;flex-shrink:0}
+.google-btn:disabled{opacity:.5;cursor:not-allowed}
+/* Setup */
+.setup-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+.setup-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:40px;max-width:440px;width:100%}
+/* App */
+.top-bar{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:15px;letter-spacing:-.5px}
+.logo em{color:var(--accent);font-style:normal}
+.week-nav{display:flex;align-items:center;gap:6px}
+.week-lbl{font-weight:500;font-size:12px;min-width:170px;text-align:center}
+.btn-nav{border:1px solid var(--border);background:none;cursor:pointer;padding:4px 10px;border-radius:6px;color:var(--muted);font-size:14px;line-height:1;font-family:inherit}
+.btn-now{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);font-family:inherit}
+.user-bar{display:flex;align-items:center;gap:8px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto}
+.tab{padding:11px 16px;background:none;border:none;border-bottom:2px solid transparent;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--muted);margin-bottom:-1px;display:flex;align-items:center;gap:5px;font-family:inherit}
+.tab.on{border-bottom-color:#111827;color:#111827;font-weight:500}
+.tab-okr{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:6px;border:none;margin:6px 4px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border-bottom:none;letter-spacing:.02em}
+.tab-okr:hover{background:linear-gradient(135deg,#6d28d9,#4c1d95)}
+.tab-ct{font-size:10px;font-weight:600;background:var(--err-bg);color:var(--err);border-radius:999px;padding:1px 6px}
+.page{padding:20px 24px;max-width:1200px}
+/* Badges */
+.mb{font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.mb-ok{background:var(--ok-bg);color:var(--ok)}
+.mb-warn{background:var(--warn-bg);color:var(--warn)}
+.mb-err{background:var(--err-bg);color:var(--err)}
+.mb-info{background:var(--info-bg);color:var(--info)}
+.mb-gray{background:var(--surface);color:var(--muted)}
+.mb-teal{background:#f0fdfa;color:#0f766e}
+/* Pills */
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+.pill{font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);font-family:inherit}
+.pill.on{background:#111827;color:#fff;border-color:#111827;font-weight:500}
+/* Pulse table */
+.sec-block{margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.sec-head{padding:9px 14px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sec-name{font-weight:600;font-size:13px}
+.sec-meta{font-size:11px;color:var(--faint)}
+.sec-badges{margin-left:auto;display:flex;gap:4px;align-items:center}
+.ptable{width:100%;border-collapse:collapse;table-layout:fixed}
+.ptable th{text-align:left;padding:7px 10px;font-size:10px;font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+.ptable td{border-bottom:1px solid var(--border);vertical-align:middle}
+.ptable tr:last-child td{border-bottom:none}
+.kpi-cell{padding:8px 10px 8px 14px;font-size:13px;line-height:1.4;position:relative}
+.sub-row td{padding:5px 10px 4px 14px;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;background:#fafafa;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.ci{width:100%;border:none;background:transparent;font-size:13px;padding:8px 10px;outline:none;color:#111827;font-family:inherit}
+.ci:hover,.ci:focus{background:#f5f5f5}
+.ci::placeholder{color:var(--faint)}
+.ci:disabled{color:var(--faint);cursor:default}
+.ci-sm{font-size:12px;color:var(--muted)}
+.status-sel{width:100%;border:none;background:transparent;font-size:12px;font-weight:500;padding:8px 10px;cursor:pointer;outline:none;font-family:inherit}
+.status-sel:disabled{opacity:.5;cursor:default}
+.add-row td{border-top:1px dashed var(--border)}
+.ghost-in{width:100%;border:none;background:transparent;font-size:12px;padding:8px 14px;outline:none;color:var(--muted);font-family:inherit}
+.ghost-in::placeholder{color:var(--faint)}
+.upd-by{font-size:10px;color:var(--faint);padding:3px 14px 4px;font-style:italic}
+/* Dashboard */
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.metric-card{background:var(--surface);border-radius:8px;padding:14px 16px}
+.metric-lbl{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.metric-val{font-size:26px;font-weight:700}
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dept-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.prog-bar{height:4px;background:var(--border);border-radius:999px;margin:8px 0 10px;overflow:hidden}
+.prog-fill{height:100%;border-radius:999px;transition:width .3s}
+.kpi-row-sm{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;gap:8px}
+/* People */
+.person-card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.person-head{padding:11px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.person-tasks{padding:10px 16px}
+.task-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.task-row:last-child{border-bottom:none}
+.task-check{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--border);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:inherit}
+.task-check.done{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+/* Follow-ups */
+.fu-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.fu-table th{text-align:left;padding:7px 10px;font-size:10px;font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+.fu-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+/* Memo */
+.memo-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;font-size:13px;line-height:1.8;white-space:pre-wrap;min-height:300px;font-family:Georgia,serif}
+/* Forms */
+.form-blk{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.fg{margin-bottom:10px}
+.fg label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.fi{width:100%;font-size:13px;border:1px solid var(--border);border-radius:6px;padding:7px 10px;background:#fff;color:#111827;outline:none;font-family:inherit}
+.fi:focus{border-color:#6b7280}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.btn{font-family:inherit;cursor:pointer;border-radius:6px;font-size:13px;padding:7px 14px;border:1px solid var(--border);background:none;color:#111827}
+.btn:hover:not(:disabled){background:var(--surface)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#111827;color:#fff;border-color:#111827;font-weight:500}
+.btn-primary:hover:not(:disabled){background:#374151}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500}
+.btn-accent:hover:not(:disabled){background:#0f766e}
+.btn-sm{font-size:12px;padding:4px 10px}
+.icon-btn{border:none;background:none;cursor:pointer;color:var(--faint);font-size:16px;line-height:1;padding:2px 4px;font-family:inherit}
+/* Misc */
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;display:flex;gap:8px;line-height:1.5}
+.alert-warn{background:var(--warn-bg);color:var(--warn);border:1px solid #fde68a}
+.empty{padding:3rem;text-align:center;color:var(--faint);font-size:13px;border:1px dashed var(--border);border-radius:10px}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fw6{font-weight:600}
+/* Setup guide */
+.guide-wrap{max-width:680px;margin:0 auto;padding:40px 24px}
+.step{display:flex;gap:16px;margin-bottom:24px}
+.step-num{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.code-block{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;font-size:11px;font-family:monospace;white-space:pre-wrap;line-height:1.6;color:#374151;word-break:break-all}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@media(max-width:768px){
+  .page{padding:14px}
+  .top-bar,.tabs{padding-left:14px;padding-right:14px}
+  .metric-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {h,render:preactRender}=window.preact;
+const {useState,useEffect,useCallback,useMemo,useRef}=window.preactHooks;
+const html=htm.bind(h);
+
+// ===================================================================
+//  CONFIGURATION - fill in these 4 values then deploy to Netlify
+// ===================================================================
+const SUPABASE_URL  = 'https://qzyawjjilikoudppkjhf.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_CyoKIAA6ZavaSFLHPQKUPg_iXl6qh3i';
+const CLAUDE_KEY    = 'YOUR_CLAUDE_API_KEY';
+const ADMIN_EMAIL   = 'loubna@klaim.ai';
+// ===================================================================
+
+const IS_CONFIGURED = !SUPABASE_URL.includes('YOUR');
+let sb=null;try{if(IS_CONFIGURED&&window.supabase)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);}catch(e){console.error("Supabase init:",e);}
+const CL_OK = !CLAUDE_KEY.includes('YOUR');
+const ALLOWED = 'klaim.ai';
+
+const SECTIONS = [
+  {id:'oman',label:'Oman',accent:'#0d9488',items:[
+    {id:'o1',label:'Regulatory Approval - FSA Sandbox'},
+    {id:'o2',label:'Escrow Account Setup - Sohar Bank'},
+    {id:'o3',label:'Integration with Dhamani'},
+    {id:'o4',label:'Investors Engagement'}]},
+  {id:'sales',label:'Sales',accent:'#16a34a',items:[
+    {id:'s1',label:'Lead generation'},
+    {id:'s2',label:'Cold calls'},
+    {id:'s3',label:'Walk-ins'},
+    {id:'s4',label:'KDMs met and meetings booked'},
+    {id:'s5',label:'Clients registered'},
+    {id:'s6',label:'Proposals signed'}]},
+  {id:'cs',label:'Customer Success',accent:'#0891b2',items:[
+    {id:'cs1',label:'Total Purchased Claims Value (AED)'},
+    {id:'cs2',label:'Renewal Rate (%)'},
+    {id:'cs3',label:'Churn Rate (%)'},
+    {id:'cs4',label:'Upsell Volume (AED)'},
+    {id:'cs5',label:'Avg RPA per Client per Month (AED)'},
+    {id:'cs6',label:'Inbound Requests (#)'},
+    {id:'cs7',label:'RPA Renewals (#)'},
+    {id:'cs8',label:'App Implementation Timeline (days)'},
+    {id:'cs9',label:'Customer Satisfaction Score (CSAT /10)'}]},
+  {id:'finance',label:'Finance & Investment',accent:'#7c3aed',items:[
+    {id:'fi1',label:'Days: proposal request to produced for sales',sub:'Investment'},
+    {id:'fi2',label:'Days after month-end: Portfolio performance report ready',sub:'Investment'},
+    {id:'fi3',label:'Deals done without manual intervention (weekly)',sub:'Investment'},
+    {id:'fi4',label:'Business days after month-end: Management accounts ready',sub:'Finance'},
+    {id:'fi5',label:'Business days before month-end: Payroll information ready',sub:'Finance'}]},
+  {id:'product',label:'Product & Delivery',accent:'#be185d',items:[]},
+  {id:'marketing',label:'Marketing',accent:'#db2777',items:[
+    {id:'mk1',label:'Leadership / brand assets published (#)'},
+    {id:'mk2',label:'Meaningful interactions with healthcare DMs (#)'},
+    {id:'mk3',label:'Emails sent (intentional outreach)'},
+    {id:'mk4',label:'WhatsApp messages sent (intentional outreach)'}]},
+  {id:'risk',label:'Risk',accent:'#dc2626',items:[
+    {id:'r1',label:'90+ Days Past Due'},
+    {id:'r2',label:'Approval Rate / Exception Rate (%)'},
+    {id:'r3',label:'Avg Approved Credit Line (AED)'},
+    {id:'r4',label:'Customers flagged by Early Warning System'},
+    {id:'r5',label:'Collected Recovery Amount (AED)'}]}
+];
+
+const STATUSES = ['On-Track','At-Risk','Delayed','Blocked','Done','N/A'];
+const FU_ST   = ['Pending','Responded','Escalated','Done'];
+const PRIOS   = ['High','Medium','Low'];
+
+const SS_C = {'On-Track':'#15803d','At-Risk':'#b45309','Delayed':'#b45309','Blocked':'#dc2626','Done':'#1d4ed8','N/A':'#9ca3af'};
+const PS   = {High:'mb-err',Medium:'mb-warn',Low:'mb-gray'};
+const FUS_C = {Pending:'#b45309',Responded:'#1d4ed8',Escalated:'#dc2626',Done:'#15803d'};
+
+// ---- Utilities ----
+function isoWeek(d=new Date()){
+  const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));
+  const y=t.getUTCFullYear(),w=Math.ceil(((t-new Date(Date.UTC(y,0,1)))/86400000+1)/7);
+  return y+'-W'+String(w).padStart(2,'0');
+}
+function weekLabel(wid){
+  const p=wid.split('-W'),yr=+p[0],wn=+p[1];
+  const jan4=new Date(Date.UTC(yr,0,4)),dw=jan4.getUTCDay()||7;
+  const mon=new Date(jan4);mon.setUTCDate(jan4.getUTCDate()-dw+1+(wn-1)*7);
+  const fri=new Date(mon);fri.setUTCDate(mon.getUTCDate()+4);
+  const f=d=>d.toLocaleDateString('en-GB',{month:'short',day:'numeric'});
+  return 'Week '+wn+' - '+f(mon)+' to '+f(fri);
+}
+function shiftWeek(wid,delta){
+  const p=wid.split('-W'),yr=+p[0],wn=+p[1];
+  const jan4=new Date(Date.UTC(yr,0,4)),dw=jan4.getUTCDay()||7;
+  const mon=new Date(jan4);mon.setUTCDate(jan4.getUTCDate()-dw+1+(wn-1)*7+delta*7);
+  return isoWeek(mon);
+}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const today=()=>new Date().toISOString().split('T')[0];
+const numOrNull=s=>{if(!s&&s!==0)return null;const n=parseFloat(String(s).replace(/,/g,''));return isNaN(n)?null:n;};
+const initials=n=>n.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?';
+
+// ---- Auth hook ----
+function useAuth(){
+  const[user,setUser]=useState(null);
+  const[profile,setProfile]=useState(null);
+  const[loading,setLoading]=useState(true);
+  const[error,setError]=useState('');
+
+  const loadProfile=useCallback(async sbUser=>{
+    if(!IS_CONFIGURED||!sb){
+      setUser({email:'demo@klaim.ai'});
+      setProfile({email:'demo@klaim.ai',name:'Demo (configure Supabase to enable login)',section_id:'',role:'admin'});
+      setLoading(false);return;
+    }
+    const{data}=await sb.from('klaim_users').select('*').eq('email',sbUser.email).maybeSingle();
+    const isAdmin=sbUser.email===ADMIN_EMAIL;
+    if(!data){
+      const np={email:sbUser.email,name:sbUser.user_metadata?.full_name||sbUser.email.split('@')[0],section_id:'',role:isAdmin?'admin':'member'};
+      await sb.from('klaim_users').insert(np);
+      setProfile(np);
+    }else{
+      if(isAdmin&&data.role!=='admin'){await sb.from('klaim_users').update({role:'admin'}).eq('email',sbUser.email);data.role='admin';}
+      setProfile(data);
+    }
+    setUser(sbUser);setLoading(false);
+  },[]);
+
+  useEffect(()=>{
+    if(!IS_CONFIGURED||!sb){loadProfile(null);return;}
+    sb.auth.getSession().then(({data:{session}})=>{
+      if(!session){setLoading(false);return;}
+      if(!session.user.email.endsWith('@'+ALLOWED)){sb.auth.signOut();setError('Only @'+ALLOWED+' accounts are allowed.');setLoading(false);return;}
+      loadProfile(session.user);
+    });
+    const{data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{
+      if(!session){setUser(null);setProfile(null);return;}
+      if(!session.user.email.endsWith('@'+ALLOWED)){sb.auth.signOut();setError('Only @'+ALLOWED+' accounts allowed.');return;}
+      loadProfile(session.user);
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  const signIn=async(_email)=>{
+    if(!IS_CONFIGURED||!sb)return;
+    const{error:e}=await sb.auth.signInWithOtp({email:_email,options:{emailRedirectTo:window.location.href}});
+    if(e)setError(e.message);else setError('Link sent! Check your inbox at '+_email);
+  };
+  const signOut=()=>{setUser(null);setProfile(null);if(IS_CONFIGURED)sb.auth.signOut();};
+  const updateProfile=async patch=>{
+    const up={...profile,...patch};
+    setProfile(up);
+    if(IS_CONFIGURED)await sb.from('klaim_users').update(patch).eq('email',profile.email);
+  };
+  return{user,profile,loading,error,signIn,signOut,updateProfile};
+}
+
+// ---- Pulse hook ----
+function usePulse(weekId){
+  const lsKey='klaim_pulse_'+weekId;
+  const[data,setData]=useState(()=>{
+    try{return JSON.parse(localStorage.getItem(lsKey)||'{}');}catch{return {};}
+  });
+  const[loading,setLoading]=useState(true);
+  useEffect(()=>{
+    setLoading(true);
+    if(!IS_CONFIGURED||!sb){
+      try{const d=JSON.parse(localStorage.getItem(lsKey)||'{}');setData(d);}catch{}
+      setLoading(false);return;
+    }
+    sb.from('klaim_pulse').select('*').eq('week_id',weekId).then(({data:rows,error})=>{
+      if(error)console.warn('pulse:',error.message);
+      const d={};
+      (rows||[]).forEach(r=>{
+        if(!d[r.section_id])d[r.section_id]={};
+        d[r.section_id][r.item_id]={prevWeek:r.prev_week||'',comingWeek:r.coming_week||'',status:r.status||'',comments:r.comments||'',updatedBy:r.updated_by||''};
+      });
+      setData(d);setLoading(false);
+      try{localStorage.setItem(lsKey,JSON.stringify(d));}catch{}
+    }).catch(e=>{console.warn('pulse catch:',e);setLoading(false);});
+  },[weekId]);
+  const updateCell=useCallback((secId,itemId,field,value,email)=>{
+    setData(d=>{
+      const n={...d,[secId]:{...(d[secId]||{}),[itemId]:{...(d[secId]?.[itemId]||{}),[field]:value,updatedBy:email}}};
+      try{localStorage.setItem(lsKey,JSON.stringify(n));}catch{}
+      return n;
+    });
+    if(!IS_CONFIGURED||!sb)return;
+    const cm={prevWeek:'prev_week',comingWeek:'coming_week',status:'status',comments:'comments'};
+    sb.from('klaim_pulse').upsert({week_id:weekId,section_id:secId,item_id:itemId,[cm[field]]:value,updated_by:email,updated_at:new Date().toISOString()},{onConflict:'week_id,section_id,item_id'});
+  },[weekId]);
+  return[data,updateCell,loading];
+}
+
+// ---- Custom items hook ----
+function useCustom(){
+  const[items,setItems]=useState({});
+  useEffect(()=>{
+    if(!IS_CONFIGURED||!sb)return;
+    sb.from('klaim_custom_items').select('*').then(({data:rows})=>{
+      const d={};(rows||[]).forEach(r=>{if(!d[r.section_id])d[r.section_id]=[];d[r.section_id].push({id:r.id,label:r.label});});
+      setItems(d);
+    });
+  },[]);
+  const add=(secId,label,existingId)=>{
+    const id=existingId||uid();
+    setItems(c=>({...c,[secId]:[...(c[secId]||[]),{id,label}]}));
+    if(IS_CONFIGURED)sb.from('klaim_custom_items').insert({id,section_id:secId,label});
+    return id;
+  };
+  const remove=(secId,id)=>{
+    setItems(c=>({...c,[secId]:(c[secId]||[]).filter(x=>x.id!==id)}));
+    if(IS_CONFIGURED)sb.from('klaim_custom_items').delete().eq('id',id);
+  };
+  return[items,add,remove];
+}
+
+// ---- Tasks hook ----
+function useTasks(){
+  const[tasks,setTasks]=useState([]);
+  useEffect(()=>{
+    if(!IS_CONFIGURED||!sb)return;
+    sb.from('klaim_tasks').select('*').order('created_at',{ascending:false}).then(({data})=>setTasks(data||[]));
+  },[]);
+  const add=t=>{setTasks(ts=>[t,...ts]);if(IS_CONFIGURED)sb.from('klaim_tasks').insert(t);};
+  const upd=(id,p)=>{setTasks(ts=>ts.map(x=>x.id===id?{...x,...p}:x));if(IS_CONFIGURED)sb.from('klaim_tasks').update(p).eq('id',id);};
+  const del=id=>{setTasks(ts=>ts.filter(x=>x.id!==id));if(IS_CONFIGURED)sb.from('klaim_tasks').delete().eq('id',id);};
+  return[tasks,add,upd,del];
+}
+
+// ---- Follow-ups hook ----
+function useFUs(){
+  const[fus,setFus]=useState([]);
+  useEffect(()=>{
+    if(!IS_CONFIGURED||!sb)return;
+    sb.from('klaim_followups').select('*').order('created_at',{ascending:false}).then(({data})=>setFus(data||[]));
+  },[]);
+  const add=f=>{setFus(fs=>[f,...fs]);if(IS_CONFIGURED)sb.from('klaim_followups').insert(f);};
+  const upd=(id,p)=>{setFus(fs=>fs.map(x=>x.id===id?{...x,...p}:x));if(IS_CONFIGURED)sb.from('klaim_followups').update(p).eq('id',id);};
+  const del=id=>{setFus(fs=>fs.filter(x=>x.id!==id));if(IS_CONFIGURED)sb.from('klaim_followups').delete().eq('id',id);};
+  return[fus,add,upd,del];
+}
+
+// ===================================================================
+//  LOGIN SCREEN
+// ===================================================================
+function LoginScreen({onSignIn,error}){
+  return html`
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="logo-big">Klaim<em>.</em></div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:32px">Chief of Staff Platform</p>
+        ${!IS_CONFIGURED&&html`
+          <div style="background:var(--warn-bg);border:1px solid #fde68a;border-radius:8px;padding:12px;font-size:12px;color:var(--warn);text-align:left;margin-bottom:20px;line-height:1.6">
+            <strong>Setup needed.</strong><br/>
+            Open this HTML file in a text editor and fill in the 4 config values at the top (SUPABASE_URL, SUPABASE_KEY, CLAUDE_KEY, ADMIN_EMAIL).<br/>
+            See the full guide at the bottom of this page.
+          </div>`}
+        <div style="margin-bottom:12px">
+          <input id="ml-email" class="fi" type="email" placeholder="ton.prenom@klaim.ai" style="margin-bottom:8px"/>
+          <button class="google-btn" onClick=${()=>{const e=document.getElementById('ml-email').value;if(e)onSignIn(e);}} disabled=${!IS_CONFIGURED}>
+            Send login link
+          </button>
+        </div>
+        <p style="font-size:12px;color:var(--faint);margin-top:12px">Only @klaim.ai accounts</p>
+        ${error&&html`<p style="margin-top:10px;font-size:12px;color:var(--err);background:var(--err-bg);padding:8px;border-radius:6px">${error}</p>`}
+        ${!IS_CONFIGURED&&html`<div style="margin-top:32px;text-align:left">
+          <p style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Setup guide</p>
+          ${[
+            {n:1,title:'Create a free Supabase project',body:'Go to supabase.com - create a free project. Copy your Project URL and anon public key from Settings > API.'},
+            {n:2,title:'Run the SQL below in Supabase SQL Editor',body:'Go to SQL Editor > New query > paste the SQL > click Run.'},
+            {n:3,title:'Enable Google login in Supabase',body:'Authentication > Providers > Google > enable it. You need a Google OAuth client ID and secret from console.cloud.google.com (create credentials for a Web app, add your Supabase callback URL: https://[your-project].supabase.co/auth/v1/callback as redirect URI).'},
+            {n:4,title:'Fill in the config values and deploy',body:'Open this HTML file in a text editor. Fill in SUPABASE_URL, SUPABASE_KEY, CLAUDE_KEY, ADMIN_EMAIL. Drag the file to netlify.com/drop to get a shareable URL.'},
+          ].map(s=>html`<div style="display:flex;gap:12px;margin-bottom:16px" key=${s.n}>
+            <div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${s.n}</div>
+            <div><div style="font-weight:600;font-size:12px;margin-bottom:2px">${s.title}</div><div style="font-size:12px;color:var(--muted);line-height:1.5">${s.body}</div></div>
+          </div>`)}
+          <div class="code-block">${`create table klaim_users (email text primary key, name text, section_id text default '', role text default 'member');
+create table klaim_pulse (week_id text, section_id text, item_id text, prev_week text default '', coming_week text default '', status text default '', comments text default '', updated_by text, updated_at timestamptz default now(), primary key (week_id,section_id,item_id));
+create table klaim_custom_items (id text primary key, section_id text, label text);
+create table klaim_tasks (id text primary key, title text, assignee_name text, assignee_email text default '', priority text default 'Medium', due_date text default '', kpi text default '', done boolean default false, created_by text, created_at timestamptz default now());
+create table klaim_followups (id text primary key, to_name text, to_role text default '', subject text, description text default '', sent_date text, due_date text default '', status text default 'Pending', priority text default 'Medium', created_at timestamptz default now());
+alter table klaim_users enable row level security;
+alter table klaim_pulse enable row level security;
+alter table klaim_custom_items enable row level security;
+alter table klaim_tasks enable row level security;
+alter table klaim_followups enable row level security;
+create policy "auth" on klaim_users for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth" on klaim_pulse for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth" on klaim_custom_items for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth" on klaim_tasks for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth" on klaim_followups for all using (auth.role()='authenticated') with check (auth.role()='authenticated');`}</div>
+          <button class="btn btn-sm" style="margin-top:8px" onClick=${()=>navigator.clipboard.writeText(document.querySelector('.code-block').textContent)}>Copy SQL</button>
+        </div>`}
+      </div>
+    </div>`;
+}
+
+// ===================================================================
+//  PROFILE SETUP
+// ===================================================================
+function ProfileSetup({profile,onSave,onSignOut}){
+  const[name,setName]=useState(profile?.name||'');
+  const[sec,setSec]=useState(profile?.section_id||'');
+  return html`
+    <div class="setup-wrap">
+      <div class="setup-card">
+        <p style="font-weight:700;font-size:18px;margin-bottom:4px">Welcome to Klaim Chief of Staff</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Set up your profile - takes 10 seconds.</p>
+        <div class="fg"><label>Your full name</label><input class="fi" value=${name} onInput=${e=>setName(e.target.value)} placeholder="First Last"/></div>
+        <div class="fg">
+          <label>Your department</label>
+          <select class="fi" value=${sec} onChange=${e=>setSec(e.target.value)}>
+            <option value="">Select your department...</option>
+            ${SECTIONS.map(s=>html`<option key=${s.id} value=${s.id}>${s.label}</option>`)}
+            <option value="ceo_office">CEO / Executive Office</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-accent" onClick=${()=>onSave({name:name.trim(),section_id:sec})} disabled=${!name.trim()}>Get started</button>
+          <button class="btn" onClick=${onSignOut}>Sign out</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ===================================================================
+//  WEEKLY PULSE
+// ===================================================================
+function PulseRow({item,cell,onUpdate,onRemove,canEdit,okrOptions}){
+  const sc=SS_C[cell.status]||'#9ca3af';
+  const opts=okrOptions||[];
+  const linked=cell.okr||'';
+  return html`
+    <tr>
+      <td>
+        <div class="kpi-cell" style="padding-right:${onRemove&&canEdit?'26px':'10px'};display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span>${item.label}</span>
+          ${linked?html`<span style="font-size:9px;padding:1px 7px;border-radius:999px;background:#f0fdfa;color:#0d9488;border:1px solid #99f6e4;font-weight:600;white-space:nowrap">${'OKR: '+linked}</span>`:html`<span></span>`}
+          ${(canEdit&&opts.length>0)?html`<select value=${linked} onChange=${e=>onUpdate('okr',e.target.value)} style="font-size:9px;height:20px;border:1px dashed var(--border);border-radius:6px;background:transparent;color:var(--faint);cursor:pointer;padding:0 4px;max-width:120px">
+            <option value="">${linked?'(remove link)':'+ link OKR'}</option>
+            ${opts.map((o,oi)=>html`<option key=${'opt'+oi} value=${o}>${o}</option>`)}
+          </select>`:html`<span></span>`}
+          ${onRemove&&canEdit?html`<button class="icon-btn" style="position:absolute;right:4px;top:50%;transform:translateY(-50%)" onClick=${onRemove}>X</button>`:html`<span></span>`}
+        </div>
+      </td>
+      <td><input class="ci" value=${cell.prevWeek||''} onInput=${e=>onUpdate('prevWeek',e.target.value)} placeholder="--" disabled=${!canEdit}/></td>
+      <td><input class="ci" value=${cell.comingWeek||''} onInput=${e=>onUpdate('comingWeek',e.target.value)} placeholder="--" disabled=${!canEdit}/></td>
+      <td>
+        <select class="status-sel" value=${cell.status||''} onChange=${e=>onUpdate('status',e.target.value)} style="color:${sc}" disabled=${!canEdit}>
+          <option value="">-- status</option>
+          ${STATUSES.map(s=>html`<option key=${s} value=${s}>${s}</option>`)}
+        </select>
+      </td>
+      <td><input class="ci ci-sm" value=${cell.comments||''} onInput=${e=>onUpdate('comments',e.target.value)} placeholder="Comments..." disabled=${!canEdit}/></td>
+    </tr>`;
+}
+
+function SecBlock({sec,secData:rawSD3,updateCell,custom,addCustom,removeCustom,profile,initiatives,okrOptions}){
+  const secData=rawSD3||{};
+  const[newLbl,setNewLbl]=useState('');
+  const all=[...sec.items,...(custom||[])];
+  const subs=[...new Set(sec.items.map(i=>i.sub).filter(Boolean))];
+  const isAdmin=profile?.role==='admin';
+  const isMine=isAdmin||(profile?.role==='head'&&profile?.section_id===sec.id);
+  const sts=all.map(i=>secData?.[i.id]?.status).filter(Boolean);
+  const onT=sts.filter(s=>s==='On-Track'||s==='Done').length;
+  const atR=sts.filter(s=>s==='At-Risk'||s==='Delayed').length;
+  const blk=sts.filter(s=>s==='Blocked').length;
+  const updaters=all.map(i=>secData?.[i.id]?.updatedBy).filter(Boolean);
+  const lastUpdater=updaters[updaters.length-1];
+
+  const doAdd=()=>{if(!newLbl.trim())return;addCustom(sec.id,newLbl.trim());setNewLbl('');};
+  const rows=items=>items.map(item=>html`
+    <${PulseRow} key=${item.id} item=${item} okrOptions=${okrOptions||[]}
+      cell=${secData?.[item.id]||{}}
+      onUpdate=${(f,v)=>updateCell(sec.id,item.id,f,v,profile?.email)}
+      onRemove=${custom?.find(c=>c.id===item.id)?()=>removeCustom(sec.id,item.id):null}
+      canEdit=${isMine}/>`);
+
+  return html`
+    <div class="sec-block" style="border-left:3px solid ${isMine?sec.accent:'#e5e7eb'}">
+      <div class="sec-head">
+        <span class="sec-name">${sec.label}</span>
+        ${(initiatives&&initiatives.length>0)?html`<span style="display:inline-flex;gap:4px;flex-wrap:wrap;margin-left:6px">${initiatives.map((iv,ix)=>html`<span key=${'ini'+ix} style="font-size:10px;padding:2px 8px;border-radius:999px;background:#f0fdfa;color:#0d9488;border:1px solid #99f6e4;font-weight:500;white-space:nowrap">${iv}</span>`)}</span>`:null}
+        ${isMine&&!isAdmin&&html`<span class="mb mb-teal">Your section</span>`}
+        <span class="sec-meta">${sts.length}/${all.length} filled</span>
+        <div class="sec-badges">
+          ${onT>0&&html`<span class="mb mb-ok">${onT} on track</span>`}
+          ${atR>0&&html`<span class="mb mb-warn">${atR} at risk</span>`}
+          ${blk>0&&html`<span class="mb mb-err">${blk} blocked</span>`}
+          ${!isMine&&html`<span class="mb mb-gray">Read only</span>`}
+        </div>
+      </div>
+      <table class="ptable">
+        <colgroup><col/><col style="width:13%"/><col style="width:13%"/><col style="width:12%"/><col style="width:21%"/></colgroup>
+        <thead><tr>
+          ${['KPI / Initiative','Previous Week','Coming Week','Status','Comments'].map(h=>html`<th key=${h}>${h}</th>`)}
+        </tr></thead>
+        <tbody>
+          ${subs.length>0
+            ?subs.map(sub=>html`
+              <tr class="sub-row" key=${'sh-'+sub}><td colspan="5">${sub}</td></tr>
+              ${rows(all.filter(i=>i.sub===sub))}`)
+            :rows(all.filter(i=>!i.sub))}
+          ${subs.length>0&&rows(all.filter(i=>!i.sub))}
+          ${isMine&&html`
+            <tr class="add-row"><td colspan="5">
+              <div style="display:flex;align-items:center;gap:6px">
+                <input class="ghost-in" value=${newLbl} onInput=${e=>setNewLbl(e.target.value)}
+                  onKeyDown=${e=>e.key==='Enter'&&doAdd()} placeholder="+ Add custom KPI or initiative..." style="flex:1"/>
+                ${newLbl.trim()&&html`<button class="btn btn-sm" style="margin:4px" onClick=${doAdd}>Add</button>`}
+              </div>
+            </td></tr>`}
+        </tbody>
+      </table>
+      ${lastUpdater&&html`<div class="upd-by">Last edited by ${lastUpdater}</div>`}
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border)">
+        <div style="padding:10px 14px;border-right:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Done last week</div>
+          ${(initiatives&&initiatives.length>0)?html`<div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:4px">${initiatives.map((t,i)=>{
+            const on=(secData&&secData['__done']&&secData['__done'].inits||'').split('|').indexOf(t)>=0;
+            const bg=on?'#15803d':'transparent';const bc=on?'#15803d':'var(--border)';const fc=on?'#fff':'var(--faint)';
+            const lbl=on?('✓ '+t):t;
+            return html`<button key=${'dn'+i} type="button" disabled=${!isMine}
+              onClick=${()=>{const cur=(secData&&secData['__done']&&secData['__done'].inits||'').split('|').filter(Boolean);const nx=on?cur.filter(x=>x!==t):cur.concat([t]);updateCell(sec.id,'__done','inits',nx.join('|'),profile?.email);}}
+              style=${'font-size:10px;padding:2px 9px;border-radius:999px;font-family:inherit;cursor:pointer;font-weight:500;border:1px solid '+bc+';background:'+bg+';color:'+fc}>${lbl}</button>`;
+          })}</div>`:html`<span></span>`}
+          <textarea class="ci" rows="2" style="resize:vertical;width:100%;font-size:12px;padding:4px 0"
+            placeholder="Key accomplishments..."
+            value=${secData?.['__done']?.prevWeek||''}
+            onInput=${e=>updateCell(sec.id,'__done','prevWeek',e.target.value,profile?.email)}
+            disabled=${!isMine}/>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Next week commitments</div>
+          ${(initiatives&&initiatives.length>0)?html`<div style="margin-bottom:6px;display:flex;flex-wrap:wrap;gap:4px">${initiatives.map((t,i)=>{
+            const on=(secData&&secData['__next']&&secData['__next'].inits||'').split('|').indexOf(t)>=0;
+            const bg=on?'#1d4ed8':'transparent';const bc=on?'#1d4ed8':'var(--border)';const fc=on?'#fff':'var(--faint)';
+            const lbl=on?('✓ '+t):t;
+            return html`<button key=${'nx'+i} type="button" disabled=${!isMine}
+              onClick=${()=>{const cur=(secData&&secData['__next']&&secData['__next'].inits||'').split('|').filter(Boolean);const nx=on?cur.filter(x=>x!==t):cur.concat([t]);updateCell(sec.id,'__next','inits',nx.join('|'),profile?.email);}}
+              style=${'font-size:10px;padding:2px 9px;border-radius:999px;font-family:inherit;cursor:pointer;font-weight:500;border:1px solid '+bc+';background:'+bg+';color:'+fc}>${lbl}</button>`;
+          })}</div>`:html`<span></span>`}
+          <textarea class="ci" rows="2" style="resize:vertical;width:100%;font-size:12px;padding:4px 0"
+            placeholder="Deliverables & commitments..."
+            value=${secData?.['__next']?.prevWeek||''}
+            onInput=${e=>updateCell(sec.id,'__next','prevWeek',e.target.value,profile?.email)}
+            disabled=${!isMine}/>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ===================================================================
+//  SALES PIPELINE
+const STAGE_LIST=[
+  ['doc','Doc Collection'],
+  ['proposal','Proposal Signed'],
+  ['docs_shared','Docs Shared'],
+  ['mrpa','MRPA Signed'],
+  ['security','Security Cheqs'],
+  ['bank','Bank Changed'],
+  ['active','Active']
+];
+const STAGE_COLS={
+  doc:'#6b7280',proposal:'#2563eb',docs_shared:'#0891b2',
+  mrpa:'#7c3aed',security:'#d97706',bank:'#ea580c',active:'#15803d'
+};
+const SALES_KPIS=[
+  {id:'s_dm',label:'Key DM Meetings'},
+  {id:'s_walkin',label:'Walk-ins'},
+  {id:'s_prop',label:'Proposals Signed'},
+  {id:'s_mrpa',label:'MRPAs Signed'}
+];
+
+function getStages(d){
+  try{return JSON.parse(d.comments||'{}');}catch{return {};}
+}
+function setStage(d,stage,val,updateCell,secId,itemId,email){
+  const stages=getStages(d);
+  stages[stage]=val;
+  updateCell(secId,itemId,'comments',JSON.stringify(stages),email);
+}
+function latestStage(stages){
+  const order=STAGE_LIST.map(s=>s[0]);
+  for(let i=order.length-1;i>=0;i--){if(stages[order[i]])return order[i];}
+  return null;
+}
+
+function SalesPipeline({weekId,secData:rawSecData,updateCell,custom,addCustom,removeCustom,profile}){
+  const secData=rawSecData||{};
+  const isAdmin=profile?.role==='admin';
+  const email=profile?.email;
+  const entities=custom||[];
+
+  // KPI summary row at top
+  const kpiRow=SALES_KPIS.map(k=>({
+    ...k,
+    val:secData[k.id]?.prevWeek||'',
+    prev:secData[k.id]?.comingWeek||''
+  }));
+
+  const signedEntities=entities.filter(e=>{
+    const st=getStages(secData[e.id]||{});
+    return st.active||st.bank;
+  });
+  const totalMonthly=entities.reduce((s,e)=>{
+    const d=secData[e.id]||{};
+    return s+(parseFloat(d.comingWeek)||0);
+  },0);
+
+  return html`
+    <div class="sec-block">
+      <div class="sec-head">
+        <span class="sec-name" style="color:#16a34a">Sales Pipeline</span>
+        <span class="sec-meta">${entities.length} leads</span>
+        <div class="sec-badges">
+          <span class="mb mb-ok">${signedEntities.length} active</span>
+          <span class="mb mb-teal">AED ${totalMonthly.toLocaleString()} est./mo</span>
+        </div>
+      </div>
+
+      <!-- KPI counters -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
+        ${kpiRow.map(k=>html`
+          <div key=${k.id} style="padding:10px 14px;${k!==kpiRow[kpiRow.length-1]?'border-right:1px solid var(--border)':''}">
+            <div style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${k.label}</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input class="ci" type="number" style="font-size:18px;font-weight:700;width:60px;padding:0"
+                placeholder="0" value=${k.val}
+                onInput=${ev=>updateCell('sales',k.id,'prevWeek',ev.target.value,email)}/>
+              <span style="font-size:11px;color:var(--faint)">this wk</span>
+            </div>
+          </div>`)}
+      </div>
+
+      <!-- Stage pipeline table -->
+      <div style="overflow-x:auto">
+        <table class="ptable" style="table-layout:fixed;min-width:900px">
+          <thead>
+            <tr>
+              <th style="width:180px">Lead / Entity</th>
+              ${STAGE_LIST.map(s=>html`<th key=${s[0]} style="width:95px;font-size:9px;text-align:center;color:${STAGE_COLS[s[0]]}">${s[1]}</th>`)}
+              <th style="width:110px">Initial AED</th>
+              <th style="width:110px">Est. Mo. AED</th>
+              ${isAdmin?html`<th style="width:36px"></th>`:''}
+            </tr>
+          </thead>
+          <tbody>
+            ${entities.map(e=>{
+              const d=secData[e.id]||{};
+              const stages=getStages(d);
+              const latest=latestStage(stages);
+              return html`
+                <tr key=${e.id}>
+                  <td class="kpi-cell">
+                    <div style="font-weight:500">${e.label}</div>
+                    ${latest?html`<div style="font-size:10px;color:${STAGE_COLS[latest]}">${STAGE_LIST.find(s=>s[0]===latest)?.[1]||''}</div>`:''}
+                  </td>
+                  ${STAGE_LIST.map(s=>html`
+                    <td key=${s[0]} style="text-align:center;padding:8px 4px">
+                      <button onClick=${()=>setStage(d,s[0],!stages[s[0]],updateCell,'sales',e.id,email)}
+                        style="width:22px;height:22px;border-radius:50%;border:1.5px solid ${stages[s[0]]?STAGE_COLS[s[0]]:'var(--border)'};background:${stages[s[0]]?STAGE_COLS[s[0]]:'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:11px;color:#fff;font-family:inherit">
+                        ${stages[s[0]]?'v':''}
+                      </button>
+                    </td>`)}
+                  <td><input class="ci" type="number" value=${d.prevWeek||''} placeholder="0"
+                    onChange=${ev=>updateCell('sales',e.id,'prevWeek',ev.target.value,email)}/></td>
+                  <td><input class="ci" type="number" value=${d.comingWeek||''} placeholder="0"
+                    onChange=${ev=>updateCell('sales',e.id,'comingWeek',ev.target.value,email)}/></td>
+                  ${isAdmin?html`<td style="text-align:center"><button class="icon-btn" onClick=${()=>removeCustom('sales',e.id)}>x</button></td>`:''}
+                </tr>`;
+            })}
+            <tr class="add-row">
+              <td colspan=${isAdmin?10:9}>
+                <input class="ghost-in" placeholder="+ Add lead (press Enter)..."
+                  onKeyDown=${ev=>{if(ev.key==='Enter'&&ev.target.value.trim()){addCustom('sales',ev.target.value.trim());ev.target.value='';}}}/>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Qualitative -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border)">
+        <div style="padding:10px 14px;border-right:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Done last week</div>
+          <textarea class="ci" rows="2" style="resize:vertical;width:100%;font-size:12px;padding:4px 0"
+            placeholder="Key sales accomplishments..."
+            value=${secData['__done']?.prevWeek||''}
+            onInput=${e=>updateCell('sales','__done','prevWeek',e.target.value,email)}/>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Next week commitments</div>
+          <textarea class="ci" rows="2" style="resize:vertical;width:100%;font-size:12px;padding:4px 0"
+            placeholder="Planned sales activities..."
+            value=${secData['__next']?.prevWeek||''}
+            onInput=${e=>updateCell('sales','__next','prevWeek',e.target.value,email)}/>
+        </div>
+      </div>
+    </div>`;
+}
+
+const MARKETS=['KSA','UAE','USA','Oman'];
+const MARKET_COLORS={'KSA':'#dc2626','UAE':'#2563eb','USA':'#7c3aed','Oman':'#0891b2'};
+function mktBadge(m){return m||'KSA';}
+const DEL_ST=['On Track','At Risk','Blocked','Done'];
+const DEL_COL={'On Track':'#15803d','At Risk':'#b45309','Blocked':'#dc2626','Done':'#1d4ed8'};
+
+function ProductRow({e,d,updateCell,removeCustom,isAdmin,email}){
+  const col=DEL_COL[d.status]||'#6b7280';
+  const mkt=d.prevWeek||'KSA';
+  const mktColor=MARKET_COLORS[mkt]||'#6b7280';
+  const parts=(d.comments||'').split('|');
+  const started=parts[0]||'';
+  const blockers=parts[1]||'';
+  const setStarted=v=>{const p=[v,blockers];updateCell('product',e.id,'comments',p.join('|'),email);};
+  const setBlockers=v=>{const p=[started,v];updateCell('product',e.id,'comments',p.join('|'),email);};
+  return html`<tr>
+    <td style="padding:4px 8px;text-align:center"><span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;color:#fff;background:${mktColor}">${mkt}</span></td>
+    <td class="kpi-cell" style="font-weight:500">${e.label}</td>
+    <td>
+      <select class="status-sel" style="color:${col};font-weight:500" value=${d.status||''}
+        onChange=${ev=>updateCell('product',e.id,'status',ev.target.value,email)}>
+        <option value="">-- status --</option>
+        ${DEL_ST.map(s=>html`<option key=${s} value=${s}>${s}</option>`)}
+      </select>
+    </td>
+    <td><input class="ci" type="date" title="Start date" value=${started}
+      onChange=${ev=>setStarted(ev.target.value)}/></td>
+    <td><input class="ci" type="date" value=${d.comingWeek||''}
+      onChange=${ev=>updateCell('product',e.id,'comingWeek',ev.target.value,email)}/></td>
+    <td><input class="ci" value=${blockers} placeholder="Blockers..."
+      onInput=${ev=>setBlockers(ev.target.value)}/></td>
+    ${isAdmin?html`<td style="text-align:center"><button class="icon-btn" onClick=${()=>removeCustom('product',e.id)}>x</button></td>`:''}
+  </tr>`;
+}
+
+function ProductBoard({weekId,secData:rawSD2,updateCell,custom,addCustom,removeCustom,profile}){
+  const secData=rawSD2||{};
+  const isAdmin=profile?.role==='admin';
+  const email=profile?.email;
+  const entities=custom||[];
+  const [addMarket,setAddMarket]=useState('KSA');
+  const [addLabel,setAddLabel]=useState('');
+  const doAdd=()=>{
+    if(!addLabel.trim())return;
+    const newId=uid();
+    addCustom('product',addLabel.trim(),newId);
+    updateCell('product',newId,'prevWeek',addMarket,email);
+    setAddLabel('');
+  };
+  const blocked=entities.filter(e=>(secData?.[e.id]?.status||'')==='Blocked').length;
+  return html`
+    <div class="sec-block">
+      <div class="sec-head">
+        <span class="sec-name" style="color:#be185d">Product & Delivery</span>
+        <span class="sec-meta">${entities.length} items</span>
+        <div class="sec-badges">
+          ${blocked>0?html`<span class="mb mb-err">${blocked} blocked</span>`:''}
+          <span class="mb mb-teal">${entities.filter(e=>(secData?.[e.id]?.status||'')==='Done').length} done</span>
+        </div>
+      </div>
+      <table class="ptable" style="table-layout:fixed">
+        <thead><tr>
+          <th style="width:50px"></th>
+          <th>Item</th>
+          <th style="width:120px">Status</th>
+          <th style="width:110px">Started</th>
+          <th style="width:110px">Est. Delivery</th>
+          <th>Blockers</th>
+          ${isAdmin?html`<th style="width:36px"></th>`:''}
+        </tr></thead>
+        <tbody>
+          ${MARKETS.map(mkt=>{
+            const rows=entities.filter(e=>secData?.[e.id]?.prevWeek===mkt||(!secData?.[e.id]?.prevWeek&&mkt==='KSA'&&false));
+            const mktRows=entities.filter(e=>(secData?.[e.id]?.prevWeek||'KSA')===mkt);
+            if(mktRows.length===0)return null;
+            return html`
+              <tr key=${mkt} class="sub-row"><td colspan=${isAdmin?7:6}><span style="background:${MARKET_COLORS[mkt]||'#6b7280'};color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">${mkt}</span></td></tr>
+              ${mktRows.map(e=>html`<${ProductRow} key=${e.id} e=${e} d=${secData?.[e.id]||{}}
+                updateCell=${updateCell} removeCustom=${removeCustom} isAdmin=${isAdmin} email=${email}/>`)}`;
+          })}
+          ${isAdmin?html`<tr class="add-row"><td colspan=${isAdmin?6:5}>
+            <div style="display:flex;gap:6px;padding:6px 10px;align-items:center">
+              <select class="status-sel" style="width:90px;border:1px solid var(--border);border-radius:4px"
+                value=${addMarket} onChange=${ev=>setAddMarket(ev.target.value)}>
+                ${MARKETS.map(m=>html`<option key=${m} value=${m}>${m}</option>`)}
+              </select>
+              <input class="ghost-in" style="flex:1" placeholder="+ Add delivery item (press Enter)..."
+                value=${addLabel}
+                onInput=${ev=>setAddLabel(ev.target.value)}
+                onKeyDown=${ev=>{if(ev.key==='Enter')doAdd();}}/>
+              ${addLabel.trim()?html`<button class="btn btn-sm" onClick=${doAdd}>Add</button>`:''}
+            </div>
+          </td></tr>`:''}
+        </tbody>
+      </table>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border)">
+        <div style="padding:10px 14px;border-right:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Done last week</div>
+          <textarea class="ci" rows="2" style="resize:vertical;width:100%;font-size:12px;padding:4px 0"
+            placeholder="Key deliveries..."
+            value=${secData?.['__done']?.prevWeek||''}
+            onInput=${e=>updateCell('product','__done','prevWeek',e.target.value,email)}/>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="font-size:10px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Next week commitments</div>
+          <textarea class="ci" rows="2" style="resize:vertical;width:100%;font-size:12px;padding:4px 0"
+            placeholder="Planned deliverables..."
+            value=${secData?.['__next']?.prevWeek||''}
+            onInput=${e=>updateCell('product','__next','prevWeek',e.target.value,email)}/>
+        </div>
+      </div>
+    </div>`;
+}
+
+function WeeklyPulse({weekId,data,updateCell,custom,addCustom,removeCustom,loading,profile,okrs}){
+  const[filter,setFilter]=useState(profile?.section_id||'all');
+  const vis=filter==='all'?SECTIONS:SECTIONS.filter(s=>s.id===filter);
+  const isAdmin=profile?.role==='admin';
+  return html`
+    <div>
+      <div class="pills">
+        <button class="pill ${filter==='all'?'on':''}" onClick=${()=>setFilter('all')}>All sections</button>
+        ${SECTIONS.map(s=>html`
+          <button key=${s.id} class="pill ${filter===s.id?'on':''}" onClick=${()=>setFilter(s.id)}
+            style="border-color:${filter===s.id?s.accent:'var(--border)'};color:${filter===s.id?s.accent:'var(--muted)'};background:${filter===s.id?s.accent+'14':''}">
+            ${s.label}
+          </button>`)}
+      </div>
+      ${!isAdmin&&!profile?.section_id&&html`
+        <div class="alert alert-warn">
+          No department assigned yet. Go to your profile to set it, or ask your admin.
+          You can view all sections but cannot edit until assigned.
+        </div>`}
+      ${loading
+        ?html`<div class="empty">Loading...</div>`
+        :vis.map(sec=>{
+        const sd=data[sec.id]||{};
+        if(sec.id==='sales')return html`<${SalesPipeline} key=${sec.id} weekId=${weekId} secData=${sd} updateCell=${updateCell} custom=${custom[sec.id]||[]} addCustom=${addCustom} removeCustom=${removeCustom} profile=${profile}/>`;
+        if(sec.id==='product')return html`<${ProductBoard} key=${sec.id} weekId=${weekId} secData=${sd} updateCell=${updateCell} custom=${custom[sec.id]||[]} addCustom=${addCustom} removeCustom=${removeCustom} profile=${profile}/>`;
+        const rawInits=(okrs?.[sec.id]?.objectives||[]).flatMap(o=>(o.initiatives||[])).filter(i=>i.title);
+        const inits=rawInits.map(i=>(i.title+(i.target>0?(' · '+i.target+' '+(i.unit||'#')):'')));
+        const okrOptions=rawInits.map(i=>i.title);
+        return html`<${SecBlock} key=${sec.id} sec=${sec} secData=${sd} updateCell=${updateCell} custom=${custom[sec.id]||[]} addCustom=${addCustom} removeCustom=${removeCustom} profile=${profile} initiatives=${inits} okrOptions=${okrOptions}/>`;
+      })}
+
+    </div>`;
+}
+
+// ===================================================================
+//  DASHBOARD  (monthly view)
+// ===================================================================
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function monthWeeks(year,month){
+  const weeks=[];const seen=new Set();
+  const d=new Date(year,month,1);
+  while(d.getMonth()===month){
+    const w=isoWeek(new Date(d));
+    if(!seen.has(w)){seen.add(w);weeks.push(w);}
+    d.setDate(d.getDate()+7);
+  }
+  return weeks;
+}
+
+function useMonthlyPulse(year,month){
+  const weeks=useMemo(()=>monthWeeks(year,month),[year,month]);
+  const weeksKey=useMemo(()=>weeks.join(','),[weeks]);
+  const[data,setData]=useState({});
+  const[loading,setLoading]=useState(false);
+  useEffect(()=>{
+    setLoading(true);
+    if(!IS_CONFIGURED||!sb){
+      const merged={};
+      weeks.forEach(wk=>{
+        try{
+          const wd=JSON.parse(localStorage.getItem('klaim_pulse_'+wk)||'{}');
+          Object.keys(wd).forEach(sec=>{
+            if(!merged[sec])merged[sec]={};
+            Object.keys(wd[sec]).forEach(item=>{
+              if(!merged[sec][item])merged[sec][item]=[];
+              merged[sec][item].push({week:wk,...wd[sec][item]});
+            });
+          });
+        }catch{}
+      });
+      setData(merged);setLoading(false);return;
+    }
+    sb.from('klaim_pulse').select('*').in('week_id',weeks)
+      .then(({data:rows})=>{
+        const merged={};
+        (rows||[]).forEach(r=>{
+          if(!merged[r.section_id])merged[r.section_id]={};
+          if(!merged[r.section_id][r.item_id])merged[r.section_id][r.item_id]=[];
+          merged[r.section_id][r.item_id].push({week:r.week_id,prevWeek:r.prev_week,comingWeek:r.coming_week,status:r.status,comments:r.comments});
+        });
+        setData(merged);setLoading(false);
+      }).catch(()=>setLoading(false));
+  },[weeksKey]);
+  return[data,loading,weeks];
+}
+
+function Dashboard({custom,tasks,okrs}){
+  const now=new Date();
+  const[year,setYear]=useState(now.getFullYear());
+  const[month,setMonth]=useState(now.getMonth());
+  const[monthData,loading,weeks]=useMonthlyPulse(year,month);
+
+  // Sales pipeline from custom items + pulse
+  const salesEntities=custom['sales']||[];
+  const salesData=monthData['sales']||{};
+  const getLatest=(secData,itemId,field)=>{
+    const entries=secData[itemId]||[];
+    const vals=entries.map(e=>parseFloat(e[field])).filter(v=>!isNaN(v));
+    return vals.length?vals[vals.length-1]:null;
+  };
+  const signedEntities=salesEntities.filter(e=>{
+    const entries=(salesData[e.id]||[]);
+    const lastStatus=entries.map(e=>e.status).filter(Boolean).pop();
+    return lastStatus==='active'||lastStatus==='mrpa';
+  });
+  const totalSignedInitial=signedEntities.reduce((s,e)=>s+(getLatest(salesData,e.id,'prevWeek')||0),0);
+  const totalMonthlyEst=salesEntities.reduce((s,e)=>s+(getLatest(salesData,e.id,'comingWeek')||0),0);
+  const pipelineByStage=STAGE_LIST.map(st=>{
+    const stId=st[0],stLabel=st[1],stColor=st[2];
+    const count=salesEntities.filter(e=>{
+      const entries=salesData[e.id]||[];
+      return (entries.map(x=>x.status).filter(Boolean).pop()||'')=== stId;
+    }).length;
+    return{id:stId,label:stLabel,color:stColor,count};
+  });
+
+  // Cross-dept stats - memoized
+  const sectionStats=SECTIONS.map(sec=>{
+    const sd=monthData[sec.id]||{};
+    const all=[...sec.items,...(custom[sec.id]||[])].filter(i=>!i.id.startsWith('__'));
+    const statuses=all.flatMap(i=>(sd[i.id]||[]).map(e=>e.status)).filter(Boolean);
+    const blk=statuses.filter(s=>s==='Blocked').length;
+    const onT=statuses.filter(s=>s==='On-Track'||s==='Done'||s==='On Track').length;
+    const doneEntries=(sd['__done']||[]).map(e=>e.prevWeek).filter(Boolean);
+    const nextEntry=(sd['__next']||[]).map(e=>e.prevWeek).filter(Boolean).pop()||'';
+    const reporting=doneEntries.length>0||statuses.length>0;
+    return{sec,blk,onT,doneEntries,nextEntry,reporting,kpiCount:all.length,filled:statuses.length};
+  });
+
+  const openTasks=(tasks||[]).filter(t=>!t.done);
+  const highPrio=openTasks.filter(t=>t.priority==='High').length;
+  const totalBlocked=sectionStats.reduce((s,x)=>s+x.blk,0);
+  const reportingDepts=sectionStats.filter(s=>s.reporting).length;
+
+  return html`
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:20px;font-weight:800;letter-spacing:-.3px">Monthly Dashboard</h2>
+          <p style="font-size:13px;color:var(--muted);margin-top:2px">${MONTHS[month]} ${year}  ·  ${weeks.length} weeks tracked</p>
+        </div>
+        <div style="display:flex;gap:6px">
+          <select class="fi" style="width:130px" value=${month} onChange=${ev=>setMonth(parseInt(ev.target.value))}>
+            ${MONTHS.map((m,i)=>html`<option key=${i} value=${i}>${m}</option>`)}
+          </select>
+          <select class="fi" style="width:80px" value=${year} onChange=${ev=>setYear(parseInt(ev.target.value))}>
+            ${[2025,2026,2027].map(y=>html`<option key=${y} value=${y}>${y}</option>`)}
+          </select>
+        </div>
+      </div>
+
+      <!-- Hero KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+        ${[
+          {lbl:'Pipeline signed AED',val:'AED '+totalSignedInitial.toLocaleString(),sub:signedEntities.length+' entities (MRPA+)',color:'var(--ok)',bg:'#f0fdf4'},
+          {lbl:'Est. monthly revenue',val:'AED '+totalMonthlyEst.toLocaleString(),sub:'across '+salesEntities.length+' entities',color:'var(--accent)',bg:'#f0fdfa'},
+          {lbl:'Open tasks',val:openTasks.length,sub:highPrio+' high priority',color:highPrio>0?'var(--err)':'#111827',bg:highPrio>0?'var(--err-bg)':'var(--surface)'},
+          {lbl:'Depts reporting',val:reportingDepts+'/'+SECTIONS.length,sub:totalBlocked>0?totalBlocked+' blocked':'All clear',color:totalBlocked>0?'var(--err)':'#111827',bg:totalBlocked>0?'var(--err-bg)':'var(--surface)'},
+        ].map(m=>html`
+          <div key=${m.lbl} style="background:${m.bg};border:1px solid var(--border);border-radius:12px;padding:16px 20px">
+            <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${m.lbl}</div>
+            <div style="font-size:22px;font-weight:800;color:${m.color};letter-spacing:-.5px">${m.val}</div>
+            <div style="font-size:11px;color:var(--faint);margin-top:3px">${m.sub}</div>
+          </div>`)}
+      </div>
+
+      <!-- Sales funnel -->
+      ${salesEntities.length>0&&html`
+        <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:14px">Sales Pipeline — ${MONTHS[month]}</div>
+          <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+             ${pipelineByStage.map((s,i)=>html`
+               <div key=${s.id} style="flex:1;text-align:center">
+                 <div style="font-size:22px;font-weight:800;color:${s.color}">${s.count}</div>
+                 <div style="font-size:10px;color:var(--muted);margin-top:2px">${s.label}</div>
+               </div>`)}
+          </div>
+          <div style="font-size:12px;color:var(--muted)">
+            ${signedEntities.map(e=>html`<span key=${e.id} style="display:inline-block;background:#f0fdf4;color:#15803d;border-radius:4px;padding:2px 8px;margin:2px;font-size:11px;font-weight:500">${e.label}</span>`)}
+          </div>
+        </div>`}
+
+      <!-- Department grid -->
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">Department Status</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+        ${sectionStats.map(({sec,blk,onT,doneEntries,nextEntry,reporting,kpiCount,filled})=>html`
+          <div key=${sec.id} style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:3px solid ${sec.accent}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-weight:600;font-size:13px">${sec.label}</span>
+              <div style="display:flex;gap:4px">
+                ${!reporting&&html`<span style="font-size:10px;color:var(--faint);font-style:italic">No updates</span>`}
+                ${onT>0&&html`<span class="mb mb-ok">${onT}</span>`}
+                ${blk>0&&html`<span class="mb mb-err">${blk} blocked</span>`}
+              </div>
+            </div>
+            <div class="prog-bar"><div class="prog-fill" style="width:${kpiCount?Math.round(filled/kpiCount*100):0}%;background:${sec.accent}"></div></div>
+            ${doneEntries.length>0&&html`
+              <div style="margin-top:8px;font-size:11px;color:#374151;border-top:1px solid var(--border);padding-top:8px">
+                <span style="color:var(--faint);font-size:10px">Latest: </span><span>${doneEntries[doneEntries.length-1]||''}</span>
+              </div>`}
+            ${nextEntry&&html`<div style="margin-top:4px;font-size:11px;color:var(--accent)">>> ${nextEntry}</div>`}
+          </div>`)}
+      </div>
+    </div>`;
+}
+
+// ===================================================================
+//  PEOPLE & TASKS (admin only)
+// ===================================================================
+function PeopleTasks({tasks,addTask,updTask,delTask,profile}){
+  const[form,setForm]=useState({title:'',assignee_name:'',priority:'Medium',due_date:'',kpi:''});
+  const now=new Date();
+  const submit=()=>{
+    if(!form.title.trim())return;
+    addTask({...form,id:uid(),done:false,created_by:profile.email,created_at:new Date().toISOString()});
+    setForm({title:'',assignee_name:form.assignee_name,priority:'Medium',due_date:'',kpi:''});
+  };
+  const grouped=useMemo(()=>{
+    const g={};
+    SECTIONS.forEach(s=>{g[s.label]=[];});
+    g['Unassigned']=[];
+    tasks.forEach(t=>{const k=t.assignee_name||'Unassigned';if(!g[k])g[k]=[];g[k].push(t);});
+    return g;
+  },[tasks]);
+  return html`
+    <div>
+      <div class="form-blk">
+        <div style="display:grid;grid-template-columns:1fr 150px 110px 150px 1fr 36px;gap:8px;align-items:center">
+          <input class="fi" value=${form.title} onInput=${e=>setForm({...form,title:e.target.value})} onKeyDown=${e=>e.key==='Enter'&&submit()} placeholder="Task or action item..."/>
+          <select class="fi" value=${form.assignee_name} onChange=${e=>setForm({...form,assignee_name:e.target.value})}>
+            <option value="">Assignee...</option>
+            ${SECTIONS.map(s=>html`<option key=${s.id} value=${s.label}>${s.label}</option>`)}
+          </select>
+          <select class="fi" value=${form.priority} onChange=${e=>setForm({...form,priority:e.target.value})}>
+            ${PRIOS.map(p=>html`<option key=${p}>${p}</option>`)}
+          </select>
+          <input type="date" class="fi" value=${form.due_date} onChange=${e=>setForm({...form,due_date:e.target.value})}/>
+          <input class="fi" value=${form.kpi} onInput=${e=>setForm({...form,kpi:e.target.value})} placeholder="KPI / target (optional)"/>
+          <button class="btn btn-primary" style="height:36px;width:36px;padding:0;font-size:20px;display:flex;align-items:center;justify-content:center" onClick=${submit}>+</button>
+        </div>
+      </div>
+      ${Object.entries(grouped).filter(([,t])=>t.length>0).map(([person,ptasks])=>{
+        const todo=ptasks.filter(t=>!t.done);
+        const done=ptasks.filter(t=>t.done);
+        const overdue=todo.filter(t=>t.due_date&&new Date(t.due_date)<now).length;
+        const sec=SECTIONS.find(s=>s.label===person);
+        return html`
+          <div class="person-card" key=${person}>
+            <div class="person-head" style="border-left:${sec?'3px solid '+sec.accent:'none'}">
+              <span class="fw6" style="font-size:14px">${person}</span>
+              <span class="mb mb-gray">${todo.length} open</span>
+              ${done.length>0&&html`<span class="mb mb-ok">${done.length} done</span>`}
+              ${overdue>0&&html`<span class="mb mb-err">${overdue} overdue</span>`}
+            </div>
+            <div class="person-tasks">
+              ${ptasks.length===0&&html`<p style="font-size:13px;color:var(--faint);font-style:italic;padding:4px 0">No tasks assigned.</p>`}
+              ${ptasks.map(task=>{
+                const isOv=!task.done&&task.due_date&&new Date(task.due_date)<now;
+                return html`
+                  <div class="task-row" key=${task.id} style="background:${isOv?'var(--err-bg)':'transparent'}">
+                    <button class="task-check ${task.done?'done':''}" onClick=${()=>updTask(task.id,{done:!task.done})}>
+                      ${task.done?'v':''}
+                    </button>
+                    <div style="flex:1;min-width:0;font-size:13px;text-decoration:${task.done?'line-through':'none'};color:${task.done?'var(--faint)':'#111827'}">
+                      ${task.title}
+                      ${task.kpi&&html`<span style="margin-left:8px;font-size:11px;color:var(--info);font-weight:500">-> ${task.kpi}</span>`}
+                    </div>
+                    <span class="mb ${PS[task.priority]||'mb-gray'}">${task.priority}</span>
+                    ${task.due_date&&html`<span style="font-size:11px;color:${isOv?'var(--err)':'var(--faint)'};white-space:nowrap">${isOv?'OVERDUE ':''}${task.due_date}</span>`}
+                    <button class="icon-btn" onClick=${()=>delTask(task.id)}>X</button>
+                  </div>`;
+              })}
+            </div>
+          </div>`;
+      })}
+    </div>`;
+}
+
+// ===================================================================
+//  FOLLOW-UPS (admin only)
+// ===================================================================
+function FollowUps({fus,addFu,updFu,delFu}){
+  const[filter,setFilter]=useState('All');
+  const[show,setShow]=useState(false);
+  const ef={to_name:'',to_role:'',subject:'',description:'',sent_date:today(),due_date:'',status:'Pending',priority:'Medium'};
+  const[form,setForm]=useState(ef);
+  const counts=Object.fromEntries(FU_ST.map(s=>[s,fus.filter(f=>f.status===s).length]));
+  const filtered=filter==='All'?fus:fus.filter(f=>f.status===filter);
+  const submit=()=>{
+    if(!form.to_name.trim()||!form.subject.trim())return;
+    addFu({...form,id:uid(),created_at:new Date().toISOString()});
+    setShow(false);setForm(ef);
+  };
+  return html`
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="pills" style="margin-bottom:0">
+          <button class="pill ${filter==='All'?'on':''}" onClick=${()=>setFilter('All')}>All</button>
+          ${FU_ST.map(s=>html`
+            <button key=${s} class="pill ${filter===s?'on':''}" onClick=${()=>setFilter(s)}>
+              ${s}${counts[s]>0?' ('+counts[s]+')':''}
+            </button>`)}
+        </div>
+        <button class="btn" style="font-weight:500" onClick=${()=>setShow(!show)}>+ Add follow-up</button>
+      </div>
+      ${show&&html`
+        <div class="form-blk">
+          <div class="g3">
+            <div class="fg"><label>To</label><input class="fi" value=${form.to_name} onInput=${e=>setForm({...form,to_name:e.target.value})} placeholder="Name"/></div>
+            <div class="fg"><label>Role / Department</label><input class="fi" value=${form.to_role} onInput=${e=>setForm({...form,to_role:e.target.value})} placeholder="Head of Finance"/></div>
+            <div class="fg"><label>Priority</label><select class="fi" value=${form.priority} onChange=${e=>setForm({...form,priority:e.target.value})}>${PRIOS.map(p=>html`<option key=${p}>${p}</option>`)}</select></div>
+          </div>
+          <div class="fg"><label>Subject</label><input class="fi" value=${form.subject} onInput=${e=>setForm({...form,subject:e.target.value})} placeholder="What you asked for"/></div>
+          <div class="fg"><label>Description</label><textarea class="fi" value=${form.description} onInput=${e=>setForm({...form,description:e.target.value})} style="min-height:52px;resize:vertical"/></div>
+          <div class="g3" style="margin-bottom:14px">
+            <div class="fg"><label>Sent date</label><input type="date" class="fi" value=${form.sent_date} onChange=${e=>setForm({...form,sent_date:e.target.value})}/></div>
+            <div class="fg"><label>Due date</label><input type="date" class="fi" value=${form.due_date} onChange=${e=>setForm({...form,due_date:e.target.value})}/></div>
+            <div class="fg"><label>Status</label><select class="fi" value=${form.status} onChange=${e=>setForm({...form,status:e.target.value})}>${FU_ST.map(s=>html`<option key=${s}>${s}</option>`)}</select></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onClick=${submit}>Save</button>
+            <button class="btn" onClick=${()=>setShow(false)}>Cancel</button>
+          </div>
+        </div>`}
+      ${filtered.length===0
+        ?html`<div class="empty">No follow-ups in this category.</div>`
+        :html`<div style="overflow-x:auto">
+          <table class="fu-table">
+            <colgroup>
+              <col style="width:68px"/>
+              <col style="width:130px"/>
+              <col/>
+              <col style="width:86px"/>
+              <col style="width:86px"/>
+              <col style="width:108px"/>
+              <col style="width:30px"/>
+            </colgroup>
+            <thead><tr>
+              ${['Priority','To','Subject / Request','Sent','Due','Status',''].map(h=>html`<th key=${h}>${h}</th>`)}
+            </tr></thead>
+            <tbody>
+              ${filtered.map(fu=>{
+                const ov=fu.due_date&&new Date(fu.due_date)<new Date()&&fu.status==='Pending';
+                return html`
+                  <tr key=${fu.id} style="background:${ov?'var(--err-bg)':'transparent'}">
+                    <td><span class="mb ${PS[fu.priority]||'mb-gray'}">${fu.priority}</span></td>
+                    <td>
+                      <div class="fw6 truncate">${fu.to_name}</div>
+                      ${fu.to_role&&html`<div style="font-size:11px;color:var(--faint)" class="truncate">${fu.to_role}</div>`}
+                    </td>
+                    <td>
+                      <div class="truncate">${fu.subject}</div>
+                      ${fu.description&&html`<div style="font-size:11px;color:var(--faint)" class="truncate">${fu.description}</div>`}
+                    </td>
+                    <td style="color:var(--faint);font-size:12px">${fu.sent_date}</td>
+                    <td style="font-size:12px;color:${ov?'var(--err)':'var(--faint)'};font-weight:${ov?600:400}">
+                      ${fu.due_date||'--'}${ov?' (!)':''}
+                    </td>
+                    <td>
+                      <select
+                        style="font-size:11px;font-weight:500;border:none;border-radius:999px;padding:3px 8px;cursor:pointer;color:${FUS_C[fu.status]};background:transparent;width:100%;font-family:inherit"
+                        value=${fu.status} onChange=${e=>updFu(fu.id,{status:e.target.value})}>
+                        ${FU_ST.map(s=>html`<option key=${s} style="color:#111827;background:#fff">${s}</option>`)}
+                      </select>
+                    </td>
+                    <td><button class="icon-btn" onClick=${()=>delFu(fu.id)}>X</button></td>
+                  </tr>`;
+              })}
+            </tbody>
+          </table>
+        </div>`}
+    </div>`;
+}
+
+// ===================================================================
+//  MEMO GENERATOR (admin only)
+// ===================================================================
+function MemoGen({custom,tasks,okrs}){
+  const now=new Date();
+  const[year,setYear]=useState(now.getFullYear());
+  const[month,setMonth]=useState(now.getMonth());
+  const[monthData,mLoading,weeks]=useMonthlyPulse(year,month);
+  const[memo,setMemo]=useState('');
+  const[loading,setLoading]=useState(false);
+  const[history,setHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem('kpmo_memos')||'[]');}catch{return[];}});
+  const[sel,setSel]=useState(null);
+  const monthLabel=MONTHS[month]+' '+year;
+
+  const generate=async()=>{
+    if(!CL_OK){alert('Add your Claude API key in the CLAUDE_KEY field at the top of the HTML file.');return;}
+    setLoading(true);setMemo('');
+    const sections=SECTIONS.map(sec=>{
+      const all=[...sec.items,...(custom[sec.id]||[])].filter(i=>!i.id.startsWith('__'));
+      const sd=monthData[sec.id]||{};
+      const doneUpdates=(sd['__done']||[]).map(e=>e.prevWeek).filter(Boolean);
+      const nextUpdates=(sd['__next']||[]).map(e=>e.prevWeek).filter(Boolean);
+      const sectionOkrs=(okrs?.[sec.id]?.objectives||[]).map(o=>({obj:o.title,inits:(o.initiatives||[]).map(i=>i.title)}));
+      return{
+        section:sec.label,
+        okrs:sectionOkrs,
+        kpis:all.map(i=>{const entries=sd[i.id]||[];const vals=entries.map(e=>parseFloat(e.prevWeek)).filter(v=>!isNaN(v));return{kpi:i.label,latestValue:vals[vals.length-1]??'',trend:vals.length>1?vals[vals.length-1]-vals[0]:null,statuses:entries.map(e=>e.status).filter(Boolean)};}),
+        doneThisMonth:doneUpdates,
+        nextPriorities:nextUpdates.slice(-1)
+      };
+    });
+    const openTasks=tasks.filter(t=>!t.done).slice(0,10).map(t=>({task:t.title,assignee:t.assignee_name||'--',priority:t.priority,due:t.due_date||'',dept:t.kpi||''}));
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:2500,
+          messages:[{role:'user',content:
+            'You are Chief of Staff at Klaim, a GCC healthtech fintech (UAE, KSA, Oman). Draft a concise monthly executive memo for the CEO.\n\n'+
+            'MONTH: '+monthLabel+' ('+weeks.length+' weeks of data)\n'+
+            'DEPARTMENT DATA: '+JSON.stringify(sections)+'\n'+
+            'OPEN TASKS: '+JSON.stringify(openTasks)+'\n\n'+
+            'Format exactly as follows:\n\n'+
+            'KLAIM | MONTHLY OPERATIONAL MEMO\n'+
+            monthLabel+' | CEO Office\n\n'+
+            'EXECUTIVE SUMMARY\n[3-4 direct sentences: business health, biggest win, biggest risk this month]\n\n'+
+            'OKR PROGRESS BY DEPARTMENT\n[For each dept with OKRs: objective + initiative progress based on qualitative updates]\n\n'+
+            'DEPARTMENT PERFORMANCE\n[Each dept: STATUS - key KPI numbers - what was done - what is next]\n\n'+
+            'BLOCKERS\n[Bullet list. "None" if clean.]\n\n'+
+            'OPEN ACTIONS (TOP 5)\n[[Dept] Task - assignee - due date]\n\n'+
+            'PRIORITIES FOR NEXT MONTH\n[3-5 bullets]\n\n'+
+            'Be direct and data-driven. No filler.'
+          }]
+        })
+      });
+      const d=await res.json();
+      const text=d.content?.[0]?.text||'Error generating memo.';
+      setMemo(text);setSel(null);
+      const entry={id:uid(),monthLabel,text,date:new Date().toISOString()};
+      setHistory(h=>{const n=[entry,...h.slice(0,9)];localStorage.setItem('kpmo_memos',JSON.stringify(n));return n;});
+    }catch(e){
+      setMemo('Error: could not reach Claude API. Check your API key.');
+    }
+    setLoading(false);
+  };
+
+  const displayed=sel?history.find(m=>m.id===sel)?.text||'':memo;
+  return html`
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:16px;flex-wrap:wrap">
+        <div>
+          <p style="font-weight:700;font-size:15px;margin-bottom:4px">Weekly Memo Generator</p>
+          <p style="font-size:13px;color:var(--muted);max-width:480px">
+            Reads this week's pulse data and open tasks, then drafts a complete CEO-ready memo in seconds.
+            Keeps the last 10 memos.
+          </p>
+        </div>
+        <button class="btn btn-accent" style="font-size:14px;padding:10px 24px;display:flex;align-items:center;gap:8px" onClick=${generate} disabled=${loading}>
+          <span class="${loading?'spin':''}">*</span>
+          ${loading?'Generating...':'Generate memo for this week'}
+        </button>
+      </div>
+      ${history.length>1&&html`
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+          <span style="font-size:12px;color:var(--muted)">Past memos:</span>
+          <button class="pill ${!sel?'on':''}" onClick=${()=>setSel(null)}>Latest</button>
+          ${history.slice(1).map(m=>html`
+            <button key=${m.id} class="pill ${sel===m.id?'on':''}" onClick=${()=>setSel(m.id)}>${m.weekLabel}</button>`)}
+        </div>`}
+      ${displayed
+        ?html`
+          <div class="memo-box">${displayed}</div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-primary" onClick=${()=>navigator.clipboard.writeText(displayed)}>Copy memo</button>
+            <button class="btn" onClick=${()=>{
+              const a=document.createElement('a');
+              a.href=URL.createObjectURL(new Blob([displayed],{type:'text/plain'}));
+              a.download='Klaim-Memo-'+weekId+'.txt';
+              a.click();
+            }}>Download .txt</button>
+          </div>`
+        :html`
+          <div class="empty" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <div style="font-size:36px">*</div>
+            <div>Fill in the Weekly Pulse then click <strong>Generate memo</strong></div>
+            ${!CL_OK&&html`<div style="color:var(--warn);font-size:12px">Add your Claude API key in the config section to enable this</div>`}
+          </div>`}
+    </div>`;
+}
+
+// ===================================================================
+//  WEEKLY RECAP DOWNLOAD
+// ===================================================================
+function downloadWeeklyRecap(weekId,pulseData,custom,tasks){
+  const h2=t=>'<h2 style="font-family:Calibri;font-size:14pt;color:#111827;border-bottom:2px solid #0d9488">'+t+'</h2>';
+  const h3=t=>'<h3 style="font-family:Calibri;font-size:11pt;color:#374151">'+t+'</h3>';
+  const p=(t,s)=>'<p style="font-family:Calibri;font-size:11pt;'+(s||'')+'">' +t+'</p>';
+  const tbl=(hdrs,rws)=>{let t='<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;width:100%;font-family:Calibri;font-size:10pt">';t+='<tr>'+hdrs.map(h=>'<th style="background:#0d9488;color:#fff;text-align:left">'+h+'</th>').join('')+'</tr>';rws.forEach(r=>{t+='<tr>'+r.map((cell,i)=>'<td style="'+(i===0?'font-weight:bold':'')+'">'+( cell||'-')+'</td>').join('')+'</tr>';});return t+'</table>';};
+  const rows=['<h1 style="font-family:Calibri;font-size:20pt;color:#0d9488">KLAIM - Weekly Recap</h1>'];
+  rows.push(p(weekLabel(weekId)+' | '+new Date().toLocaleDateString(),'color:#6b7280'));
+  rows.push('<hr style="border:1px solid #0d9488"/>');
+  SECTIONS.forEach(sec=>{
+    const sd=pulseData[sec.id]||{};
+    const all=[...sec.items,...(custom[sec.id]||[])].filter(i=>!i.id.startsWith('__'));
+    const done=sd['__done']?.prevWeek||'';
+    const next=sd['__next']?.prevWeek||'';
+    const kpis=all.filter(i=>sd[i.id]?.prevWeek||sd[i.id]?.comingWeek||sd[i.id]?.status);
+    if(!kpis.length&&!done&&!next)return;
+    rows.push(h2(sec.label));
+    if(kpis.length)rows.push(tbl(['KPI','Last Week','Coming Week','Status'],kpis.map(i=>{const d=sd[i.id]||{};return[i.label,d.prevWeek,d.comingWeek,d.status];})));
+    if(done){rows.push(h3('Done last week'));rows.push(p(done));}
+    if(next){rows.push(h3('Next week'));rows.push(p(next,'color:#0d9488;font-weight:bold'));}
+  });
+  const ot=(tasks||[]).filter(t=>!t.done);
+  if(ot.length){rows.push(h2('Open Tasks ('+ot.length+')'));rows.push(tbl(['Task','Assignee','Priority','Due'],ot.slice(0,20).map(t=>[t.title,t.assignee_name,t.priority,t.due_date])));}
+  const html='<html><head><meta charset="utf-8"></head><body style="margin:40pt">'+rows.join('')+'</body></html>';
+  const blob=new Blob([html],{type:'application/msword'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='Klaim-Recap-'+weekId+'.doc';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+// ===================================================================
+//  APP ROOT
+
+// ===================================================================
+//  OKR LAYER  (quarterly, standalone)
+// ===================================================================
+const QUARTERS=['Q1-2026','Q2-2026','Q3-2026','Q4-2026','Q1-2027'];
+
+function useOKR(quarter){
+  const lsKey='klaim_okrs_'+quarter;
+  const[okrs,setOkrs]=useState(()=>{try{return JSON.parse(localStorage.getItem(lsKey)||'{}');}catch{return {};}});
+  const[saving,setSaving]=useState(false);
+  useEffect(()=>{
+    if(!IS_CONFIGURED||!sb){try{setOkrs(JSON.parse(localStorage.getItem(lsKey)||'{}'));}catch{}return;}
+    sb.from('klaim_okrs').select('*').eq('quarter',quarter)
+      .then(({data:rows})=>{
+        const d={};(rows||[]).forEach(r=>{d[r.dept_id]=r.data||{objectives:[]};});
+        setOkrs(d);try{localStorage.setItem(lsKey,JSON.stringify(d));}catch{}
+      }).catch(()=>{});
+  },[quarter]);
+  const saveOKR=async(deptId,data)=>{
+    setSaving(true);
+    const updated={...okrs,[deptId]:data};
+    setOkrs(updated);
+    try{localStorage.setItem(lsKey,JSON.stringify(updated));}catch{}
+    if(IS_CONFIGURED)await sb.from('klaim_okrs').upsert({id:quarter+':'+deptId,quarter,dept_id:deptId,data,updated_at:new Date().toISOString()});
+    setSaving(false);
+  };
+  return[okrs,saveOKR,saving];
+}
+
+function ProgressRing({pct,color,size}){
+  const sz=size||44;const r=(sz/2)-4;const circ=2*Math.PI*r;
+  const p=Math.max(0,Math.min(100,pct||0));
+  const offset=circ*(1-p/100);
+  const cx=sz/2;
+  return html`
+    <svg width=${sz} height=${sz} viewBox=${'0 0 '+sz+' '+sz} style="flex-shrink:0">
+      <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke="#e5e7eb" stroke-width="4"/>
+      <circle cx=${cx} cy=${cx} r=${r} fill="none" stroke=${color||'#0d9488'} stroke-width="4"
+        stroke-dasharray=${circ} stroke-dashoffset=${offset} stroke-linecap="round"
+        transform=${'rotate(-90 '+cx+' '+cx+')'}/>
+      <text x=${cx} y=${cx+3} text-anchor="middle" font-size="11" font-weight="700" fill="#111827">${Math.round(p)+'%'}</text>
+    </svg>`;
+}
+
+function initCompletion(init,pulseData){
+  if(!init.src_section||!init.src_item||!(init.target>0))return null;
+  const sd=pulseData[init.src_section]||{};
+  const cell=sd[init.src_item]||{};
+  const val=parseFloat(cell.prevWeek||cell.comingWeek);
+  if(isNaN(val))return null;
+  const pct=Math.min(100,Math.round(val/init.target*100));
+  return{val,pct};
+}
+
+function OKREditModal({dept,data,onSave,onClose}){
+  const[d,setD]=useState(JSON.parse(JSON.stringify(data||{objectives:[]})));
+  const sec=SECTIONS.find(s=>s.id===dept);
+  const addObj=()=>setD(x=>({...x,objectives:[...(x.objectives||[]),{id:uid(),title:'',initiatives:[]}]}));
+  const delObj=(oi)=>setD(x=>({...x,objectives:x.objectives.filter((_,i)=>i!==oi)}));
+  const updObj=(oi,val)=>setD(x=>{const o=[...x.objectives];o[oi]={...o[oi],title:val};return{...x,objectives:o};});
+  const addInit=(oi)=>setD(x=>{const o=[...x.objectives];o[oi].initiatives=[...(o[oi].initiatives||[]),{id:uid(),title:'',src_section:dept,src_item:'',target:0,unit:'#'}];return{...x,objectives:o};});
+  const updInit=(oi,ii,field,val)=>setD(x=>{const o=[...x.objectives];o[oi].initiatives[ii]={...o[oi].initiatives[ii],[field]:val};return{...x,objectives:o};});
+  const delInit=(oi,ii)=>setD(x=>{const o=[...x.objectives];o[oi].initiatives=o[oi].initiatives.filter((_,i)=>i!==ii);return{...x,objectives:o};});
+  return html`
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;overflow-y:auto;display:flex;justify-content:center;padding:40px 16px">
+      <div style="background:#fff;border-radius:14px;width:100%;max-width:640px;padding:28px;height:fit-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <h2 style="font-size:16px;font-weight:700">${'OKRs - '+(sec?sec.label:'')}</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onClick=${onClose}>Cancel</button>
+            <button class="btn btn-primary" onClick=${()=>onSave(d)}>Save</button>
+          </div>
+        </div>
+        ${(d.objectives||[]).map((obj,oi)=>html`
+          <div key=${obj.id} style="border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden">
+            <div style="background:var(--surface);padding:10px 14px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border)">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);min-width:24px">${'O'+(oi+1)}</span>
+              <input class="fi" style="flex:1;font-weight:600;border:none;background:transparent;padding:0;font-size:14px" value=${obj.title}
+                onInput=${ev=>updObj(oi,ev.target.value)} placeholder="Objective..."/>
+              <button class="icon-btn" style="color:var(--err)" onClick=${()=>delObj(oi)}>X</button>
+            </div>
+            <div style="padding:12px 14px">
+              ${(obj.initiatives||[]).map((init,ii)=>html`
+                <div key=${init.id} style="margin-bottom:8px;padding:8px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+                  <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
+                    <span style="font-size:11px;font-weight:700;color:var(--accent);min-width:20px">${'I'+(ii+1)}</span>
+                    <input class="fi" style="flex:1;font-size:13px" value=${init.title}
+                      onInput=${ev=>updInit(oi,ii,'title',ev.target.value)} placeholder="Initiative..."/>
+                    <button class="icon-btn" style="color:var(--faint)" onClick=${()=>delInit(oi,ii)}>X</button>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--faint)">
+                    <span>Tracks KPI:</span>
+                    <select class="fi" style="font-size:11px;flex:1;height:28px" value=${init.src_item||''}
+                      onChange=${ev=>updInit(oi,ii,'src_item',ev.target.value)}>
+                      <option value="">-- KPI --</option>
+                      ${((SECTIONS.find(sx=>sx.id===dept)||{}).items||[]).map(it=>html`<option key=${it.id} value=${it.id}>${it.label}</option>`)}
+                    </select>
+                    <span>Target:</span>
+                    <input class="fi" type="number" style="font-size:11px;width:60px;height:28px" value=${init.target||0}
+                      onChange=${ev=>updInit(oi,ii,'target',parseFloat(ev.target.value)||0)}/>
+                    <select class="fi" style="font-size:11px;width:56px;height:28px" value=${init.unit||'#'}
+                      onChange=${ev=>updInit(oi,ii,'unit',ev.target.value)}>
+                      ${['#','%','AED','USD','days'].map(u=>html`<option key=${u} value=${u}>${u}</option>`)}
+                    </select>
+                  </div>
+                </div>`)}
+              <button class="btn btn-sm" style="margin-top:4px" onClick=${()=>addInit(oi)}>+ Initiative</button>
+            </div>
+          </div>`)}
+        <button class="btn btn-accent" onClick=${addObj}>+ Add Objective</button>
+      </div>
+    </div>`;
+}
+
+function OKRDeptCard({dept,data,onEdit,canEdit,pulseData}){
+  const sec=SECTIONS.find(s=>s.id===dept);
+  const objectives=(data&&data.objectives)?data.objectives:[];
+  const totalInits=objectives.reduce((s,o)=>s+((o.initiatives&&o.initiatives.length)||0),0);
+  if(!canEdit&&objectives.length===0)return html`<span></span>`;
+  const metaText=objectives.length+' obj - '+totalInits+' initiatives';
+  return html`
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px">
+      <div style="padding:11px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+        <span style="font-weight:700;font-size:13px">${sec?sec.label:''}</span>
+        <span style="font-size:11px;color:var(--faint)">${metaText}</span>
+        <div style="margin-left:auto">
+          ${canEdit?html`<button class="btn btn-sm" onClick=${onEdit}>${objectives.length?'Edit':'Set OKRs'}</button>`:html`<span></span>`}
+        </div>
+      </div>
+      <div style="padding:${objectives.length>0?'14px 16px':'0'}">
+        ${objectives.map((obj,oi)=>html`
+          <div key=${obj.id} style="margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:#111827;margin-bottom:8px;display:flex;gap:6px">
+              <span style="color:var(--faint)">${'O'+(oi+1)}</span>
+              <span>${obj.title||''}</span>
+            </div>
+            ${((obj.initiatives)||[]).map((init,ii)=>{
+              const comp=initCompletion({...init,src_section:dept},pulseData||{});
+              const ringColor=comp?(comp.pct>=100?'#15803d':comp.pct>=50?'#0d9488':'#d97706'):'#e5e7eb';
+              const targetText=init.target>0?(init.target+' '+(init.unit||'#')):'';
+              const kpiText=init.src_item?(((SECTIONS.find(sx=>sx.id===dept)||{}).items||[]).find(it=>it.id===init.src_item)||{}).label||'':'(no KPI)';
+              return html`
+              <div key=${init.id} style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+                ${comp?html`<${ProgressRing} pct=${comp.pct} color=${ringColor} size=${40}/>`:html`<div style="width:40px;height:40px;border-radius:50%;border:2px dashed var(--border);flex-shrink:0"></div>`}
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:500">${init.title||''}</div>
+                  <div style="font-size:11px;color:var(--faint)">${comp?(comp.val+' / '+targetText):(targetText?('Target: '+targetText):'No target set')}</div>
+                </div>
+                <span style="font-size:10px;padding:2px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--muted);white-space:nowrap">${kpiText}</span>
+              </div>`;
+            })}
+          </div>`)}
+      </div>
+    </div>`;
+}
+
+function OKRView({profile,pulseData}){
+  const curQ=()=>{const m=new Date().getMonth();return 'Q'+(Math.floor(m/3)+1)+'-'+new Date().getFullYear();};
+  const[quarter,setQuarter]=useState(curQ());
+  const[okrs,saveOKR,saving]=useOKR(quarter);
+  const[editing,setEditing]=useState(null);
+  const isAdmin=profile&&profile.role==='admin';
+  const myDept=profile&&profile.section_id;
+  return html`
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:2px">Quarterly OKRs</h2>
+          <p style="font-size:13px;color:var(--muted)">Objectives & initiatives per department</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${saving?html`<span style="font-size:12px;color:var(--muted)">Saving...</span>`:html`<span></span>`}
+          <select class="fi" style="width:120px" value=${quarter} onChange=${ev=>setQuarter(ev.target.value)}>
+            ${QUARTERS.map(q=>html`<option key=${q} value=${q}>${q}</option>`)}
+          </select>
+        </div>
+      </div>
+      ${editing?html`<${OKREditModal} dept=${editing} data=${okrs[editing]||{objectives:[]}} onSave=${dd=>{saveOKR(editing,dd);setEditing(null);}} onClose=${()=>setEditing(null)}/>`:html`<span></span>`}
+      ${SECTIONS.map(sec=>html`<${OKRDeptCard} key=${sec.id} dept=${sec.id} data=${okrs[sec.id]||{objectives:[]}} canEdit=${isAdmin||myDept===sec.id} onEdit=${()=>setEditing(sec.id)} pulseData=${pulseData}/>`)}
+    </div>`;
+}
+
+// ===================================================================
+const UNITS=['#','%','AED','USD','days'];
+
+function krProgress(kr,pulseData,custom){
+  if(!kr.src_section||!kr.src_item)return null;
+  const sd=pulseData[kr.src_section]||{};
+  const val=parseFloat(sd[kr.src_item]?.prevWeek||sd[kr.src_item]?.comingWeek);
+  if(isNaN(val))return null;
+  const pct=kr.target>0?Math.min(100,Math.round(val/kr.target*100)):0;
+  return{val,pct};
+}
+
+function initiativeUpdate(init,pulseData){
+  if(!init.src_section)return null;
+  const sd=pulseData[init.src_section]||{};
+  return{done:sd['__done']?.prevWeek||'',next:sd['__next']?.prevWeek||''};
+}
+
+// ===================================================================
+//  MEETING NOTES
+// ===================================================================
+function MeetingNotes({weekId,updateCell,addTask,profile}){
+  const[notes,setNotes]=useState('');
+  const[loading,setLoading]=useState(false);
+  const[result,setResult]=useState(null);
+  const[err,setErr]=useState('');
+  const dueDate=weekEndDate(weekId);
+
+  const extract=async()=>{
+    if(!notes.trim())return;
+    setLoading(true);setResult(null);setErr('');
+    if(!CL_OK){
+      setErr('Add your Claude API key (CLAUDE_KEY) at the top of the file.');
+      setLoading(false);return;
+    }
+    const deptList=SECTIONS.map(s=>s.id+' ('+s.label+')').join(', ');
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',max_tokens:1500,
+          messages:[{role:'user',content:
+            'Extract from these weekly pulse meeting notes: action items + department commitments for next week.\n'+
+            'Departments: '+deptList+'\n'+
+            'Return ONLY valid JSON:\n'+
+            '{"tasks":[{"title":"...","assignee":"...","priority":"High|Medium|Low","dept_id":"dept_id_or_empty"}],'+
+            '"commitments":[{"dept_id":"dept_id","text":"what this dept commits to next week"}]}\n\n'+
+            'Week: '+weekId+'\nNotes:\n'+notes
+          }]
+        })
+      });
+      const d=await res.json();
+      const txt=d.content?.[0]?.text||'';
+      const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+      (parsed.tasks||[]).forEach(t=>{
+        addTask({id:uid(),title:t.title,assignee_name:t.assignee||'',assignee_email:'',
+          priority:t.priority||'Medium',due_date:dueDate,
+          kpi:SECTIONS.find(s=>s.id===t.dept_id)?.label||'',done:false,created_by:profile?.email});
+      });
+      (parsed.commitments||[]).forEach(cm=>{
+        if(cm.dept_id&&cm.text)updateCell(cm.dept_id,'__next','prevWeek',cm.text,profile?.email);
+      });
+      setResult({tasksAdded:(parsed.tasks||[]).length,commitments:parsed.commitments||[]});
+      setNotes('');
+    }catch(e){setErr('Error: '+e.message);}
+    setLoading(false);
+  };
+
+  return html`
+    <div style="max-width:720px">
+      <div style="margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:2px">Weekly Pulse Notes</h2>
+        <p style="font-size:13px;color:var(--muted)">${weekLabel(weekId)}  ·  Tasks due ${dueDate}  ·  Commitments pushed to pulse</p>
+      </div>
+      <div class="form-blk">
+        <textarea class="fi" rows="12" style="resize:vertical;line-height:1.65;font-size:13px"
+          placeholder="Paste your weekly pulse meeting notes here..."
+          value=${notes} onInput=${ev=>setNotes(ev.target.value)}/>
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" onClick=${extract} disabled=${loading||!notes.trim()}>
+            ${loading?'Extracting...':'Extract & Push'}
+          </button>
+          ${err&&html`<span style="color:var(--err);font-size:12px">${err}</span>`}
+        </div>
+      </div>
+      ${result&&html`
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 20px">
+          <div style="font-weight:600;font-size:13px;color:#15803d;margin-bottom:8px">Done — ${result.tasksAdded} tasks added · ${result.commitments.length} depts updated</div>
+          ${result.commitments.map((cm,i)=>html`
+            <div key=${i} style="font-size:12px;color:#166534;padding:2px 0">
+              <strong>${SECTIONS.find(s=>s.id===cm.dept_id)?.label||cm.dept_id}:</strong> ${cm.text}
+            </div>`)}
+        </div>`}
+    </div>`;
+}
+
+// ===================================================================
+//  OKR LAYER  (quarterly, standalone)
+// ===================================================================
+
+// ===================================================================
+//  APP ROOT
+
+// ===================================================================
+//  OKR LAYER
+// ===================================================================
+
+function krProgress(kr,pulseData,custom){
+  if(!kr.src_section||!kr.src_item)return null;
+  const sd=pulseData[kr.src_section]||{};
+  const val=parseFloat(sd[kr.src_item]?.prevWeek||sd[kr.src_item]?.comingWeek);
+  if(isNaN(val))return null;
+  const pct=kr.target>0?Math.min(100,Math.round(val/kr.target*100)):0;
+  return{val,pct};
+}
+
+function initiativeUpdate(init,pulseData){
+  if(!init.src_section)return null;
+  const sd=pulseData[init.src_section]||{};
+  return{done:sd['__done']?.prevWeek||'',next:sd['__next']?.prevWeek||''};
+}
+
+// ===================================================================
+//  MEETING NOTES
+// ===================================================================
+function weekEndDate(weekId){
+  // Returns YYYY-MM-DD for the Sunday of the given ISO week
+  const[y,w]=weekId.split('-W').map(Number);
+  const jan4=new Date(y,0,4);
+  const mon=new Date(jan4);
+  mon.setDate(jan4.getDate()-(jan4.getDay()||7)+1+(w-1)*7);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return sun.toISOString().slice(0,10);
+}
+
+// ===================================================================
+//  OKR LAYER  (quarterly, standalone)
+// ===================================================================
+
+// ===================================================================
+//  APP ROOT
+
+// ===================================================================
+//  OKR LAYER
+// ===================================================================
+
+function krProgress(kr,pulseData,custom){
+  if(!kr.src_section||!kr.src_item)return null;
+  const sd=pulseData[kr.src_section]||{};
+  const val=parseFloat(sd[kr.src_item]?.prevWeek||sd[kr.src_item]?.comingWeek);
+  if(isNaN(val))return null;
+  const pct=kr.target>0?Math.min(100,Math.round(val/kr.target*100)):0;
+  return{val,pct};
+}
+
+function initiativeUpdate(init,pulseData){
+  if(!init.src_section)return null;
+  const sd=pulseData[init.src_section]||{};
+  return{done:sd['__done']?.prevWeek||'',next:sd['__next']?.prevWeek||''};
+}
+
+// ===================================================================
+//  MEETING NOTES  (consolidated weekly qualitative view)
+// ===================================================================
+// ===================================================================
+//  OKR LAYER  (quarterly, standalone)
+// ===================================================================
+
+// ===================================================================
+//  APP ROOT
+
+// ===================================================================
+//  OKR LAYER
+// ===================================================================
+
+function krProgress(kr,pulseData,custom){
+  if(!kr.src_section||!kr.src_item)return null;
+  const sd=pulseData[kr.src_section]||{};
+  const val=parseFloat(sd[kr.src_item]?.prevWeek||sd[kr.src_item]?.comingWeek);
+  if(isNaN(val))return null;
+  const pct=kr.target>0?Math.min(100,Math.round(val/kr.target*100)):0;
+  return{val,pct};
+}
+
+function initiativeUpdate(init,pulseData){
+  if(!init.src_section)return null;
+  const sd=pulseData[init.src_section]||{};
+  return{done:sd['__done']?.prevWeek||'',next:sd['__next']?.prevWeek||''};
+}
+
+// ===================================================================
+//  MEETING NOTES + AI TASK EXTRACTION
+// ===================================================================
+// ===================================================================
+function UserManagement({profile,onClose}){
+  const[users,setUsers]=useState([]);
+  const[loading,setLoading]=useState(true);
+  const[msg,setMsg]=useState('');
+  const[nEmail,setNEmail]=useState('');
+  const[nName,setNName]=useState('');
+  const[nRole,setNRole]=useState('head');
+  const[nSection,setNSection]=useState('');
+  const addUser=()=>{
+    const em=nEmail.trim().toLowerCase();
+    if(!em){setMsg('Enter an email');return;}
+    if(!em.endsWith('@'+ALLOWED)){setMsg('Email must be @'+ALLOWED);return;}
+    if(users.some(u=>u.email===em)){setMsg('User already exists');return;}
+    const np={email:em,name:nName.trim(),role:nRole,section_id:nSection};
+    setUsers(us=>[...us,np]);
+    setNEmail('');setNName('');setNRole('head');setNSection('');
+    if(IS_CONFIGURED&&sb)sb.from('klaim_users').insert(np).then(({error})=>{setMsg(error?('Error: '+error.message):'User added - they activate by logging in');load();});
+    else setMsg('User added (demo)');
+  };
+  const load=()=>{
+    if(!IS_CONFIGURED||!sb){setUsers([]);setLoading(false);return;}
+    sb.from('klaim_users').select('*').order('name').then(({data,error})=>{
+      if(error){setMsg('Error: '+error.message);}
+      setUsers(data||[]);setLoading(false);
+    });
+  };
+  useEffect(load,[]);
+  const setRole=(email,role)=>{
+    setUsers(us=>us.map(u=>u.email===email?{...u,role}:u));
+    if(IS_CONFIGURED&&sb)sb.from('klaim_users').update({role}).eq('email',email).then(()=>setMsg('Saved'));
+  };
+  const setSection=(email,section_id)=>{
+    setUsers(us=>us.map(u=>u.email===email?{...u,section_id}:u));
+    if(IS_CONFIGURED&&sb)sb.from('klaim_users').update({section_id}).eq('email',email).then(()=>setMsg('Saved'));
+  };
+  const roleColor=(r)=>r==='admin'?'#6135FC':r==='head'?'#0d9488':'#6b7280';
+  const roleLabel=(r)=>r==='admin'?'Admin':r==='head'?'Dept Head':'Viewer';
+  return html`
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow-y:auto;display:flex;justify-content:center;padding:40px 16px" onClick=${onClose}>
+      <div style="background:#fff;border-radius:14px;width:100%;max-width:760px;padding:28px;height:fit-content" onClick=${e=>e.stopPropagation()}>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <h2 style="font-size:18px;font-weight:700">User Management</h2>
+          <button class="btn" onClick=${onClose}>Close</button>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Assign roles and departments. Admins manage everything; Department Heads edit only their section; Viewers have read-only access.</p>
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:#f0ebff;color:#6135FC;font-weight:600">Admin - full access + user mgmt</span>
+          <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:#f0fdfa;color:#0d9488;font-weight:600">Dept Head - edits own section</span>
+          <span style="font-size:11px;padding:3px 10px;border-radius:999px;background:#f3f4f6;color:#6b7280;font-weight:600">Viewer - read-only</span>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;background:var(--surface)">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px">Add a user</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 110px 140px auto;gap:8px;align-items:center">
+            <input class="fi" style="font-size:12px;height:32px" placeholder="email@klaim.ai" value=${nEmail} onInput=${ev=>setNEmail(ev.target.value)}/>
+            <input class="fi" style="font-size:12px;height:32px" placeholder="Name (optional)" value=${nName} onInput=${ev=>setNName(ev.target.value)}/>
+            <select class="fi" style="font-size:12px;height:32px" value=${nRole} onChange=${ev=>setNRole(ev.target.value)}>
+              <option value="admin">Admin</option>
+              <option value="head">Dept Head</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            <select class="fi" style="font-size:12px;height:32px" value=${nSection} onChange=${ev=>setNSection(ev.target.value)}>
+              <option value="">-- department --</option>
+              ${SECTIONS.map(sx=>html`<option key=${sx.id} value=${sx.id}>${sx.label}</option>`)}
+              <option value="ceo_office">CEO / Exec Office</option>
+            </select>
+            <button class="btn btn-primary" style="height:32px" onClick=${addUser}>Add</button>
+          </div>
+          <div style="font-size:11px;color:var(--faint);margin-top:7px">The user activates their account by logging in with their @klaim.ai email - their role is already assigned.</div>
+        </div>
+        ${loading?html`<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">Loading users...</div>`:html`
+          <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr 130px 160px;gap:0;background:var(--surface);padding:10px 14px;font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.05em">
+              <span>User</span><span>Role</span><span>Department</span>
+            </div>
+            ${users.length===0?html`<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No users yet. Users appear here after their first login.</div>`:html`<div>${users.map((u,ui)=>html`
+              <div key=${u.email||ui} style="display:grid;grid-template-columns:1fr 130px 160px;gap:0;padding:10px 14px;border-top:1px solid var(--border);align-items:center">
+                <div style="min-width:0">
+                  <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px">
+                    <span>${u.name||'(no name)'}</span>
+                    <span style="font-size:9px;padding:1px 6px;border-radius:999px;color:#fff;background:${roleColor(u.role)}">${roleLabel(u.role)}</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--muted)">${u.email}</div>
+                </div>
+                <select class="fi" style="font-size:12px;height:30px" value=${u.role||'viewer'} disabled=${u.email===profile.email}
+                  onChange=${ev=>setRole(u.email,ev.target.value)}>
+                  <option value="admin">Admin</option>
+                  <option value="head">Dept Head</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+                <select class="fi" style="font-size:12px;height:30px;margin-left:8px" value=${u.section_id||''}
+                  onChange=${ev=>setSection(u.email,ev.target.value)}>
+                  <option value="">-- none --</option>
+                  ${SECTIONS.map(sx=>html`<option key=${sx.id} value=${sx.id}>${sx.label}</option>`)}
+                  <option value="ceo_office">CEO / Exec Office</option>
+                </select>
+              </div>`)}</div>`}
+          </div>`}
+        ${msg?html`<div style="margin-top:12px;font-size:12px;color:var(--ok)">${msg}</div>`:html`<span></span>`}
+        ${(!IS_CONFIGURED)?html`<div style="margin-top:12px;font-size:12px;color:var(--warn)">Demo mode - connect Supabase to manage real users.</div>`:html`<span></span>`}
+      </div>
+    </div>`;
+}
+
+function AIAssistant({pulseData,updateCell,profile,weekId,okrs,saveOKR}){
+  const[open,setOpen]=useState(false);
+  const[input,setInput]=useState('');
+  const[msgs,setMsgs]=useState([]);
+  const[busy,setBusy]=useState(false);
+  const[listening,setListening]=useState(false);
+  const recRef=useRef(null);
+
+  const startVoice=()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){setMsgs(m=>[...m,{role:'sys',text:'Voice not supported in this browser. Use Chrome.'}]);return;}
+    const r=new SR();r.lang='en-US';r.interimResults=false;r.maxAlternatives=1;
+    r.onresult=(e)=>{const t=e.results[0][0].transcript;setInput(v=>(v?v+' ':'')+t);};
+    r.onend=()=>setListening(false);
+    r.onerror=()=>setListening(false);
+    recRef.current=r;r.start();setListening(true);
+  };
+  const stopVoice=()=>{if(recRef.current)recRef.current.stop();setListening(false);};
+
+  const buildContext=()=>{
+    const secs=SECTIONS.map(s=>({
+      id:s.id,label:s.label,
+      kpis:s.items.map(it=>({id:it.id,label:it.label,current:(pulseData[s.id]||{})[it.id]||{}}))
+    }));
+    const okrCtx=SECTIONS.map(s=>({section:s.id,objectives:((okrs&&okrs[s.id]&&okrs[s.id].objectives)||[]).map(o=>({title:o.title,initiatives:(o.initiatives||[]).map(i=>i.title)}))}));
+    return{secs,okrCtx};
+  };
+
+  const send=async()=>{
+    const text=input.trim();if(!text||busy)return;
+    setMsgs(m=>[...m,{role:'user',text}]);setInput('');setBusy(true);
+    const{secs,okrCtx}=buildContext();
+    const sys='You are the Klaim Chief of Staff assistant. The user gives you verbal updates about what happened across departments. Map each piece of information to the correct department KPI and field, and return ONLY valid JSON (no markdown, no prose) of the form: {"updates":[{"section":"<section_id>","item":"<kpi_id>","field":"prevWeek|comingWeek|status|comments","value":"<string>"}],"reply":"<short confirmation of what you updated>"}. Rules: section must be one of the given section ids. item must be one of that section kpi ids. field prevWeek = what was achieved/current value, comingWeek = target/next, status one of On-Track,At-Risk,Blocked,Done,Delayed, comments = free text note. Only include updates you are confident about. Here are the departments and their KPIs with current values: '+JSON.stringify(secs)+'. Here are the OKRs for context: '+JSON.stringify(okrCtx)+'. Current week: '+weekId+'.';
+    try{
+      const res=await fetch('/api/proxy',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'gpt-oss:120b-cloud',max_tokens:1500,messages:[{role:'user',content:sys+'\n\nUser update: '+text}]})
+      });
+      if(!res.ok){setMsgs(m=>[...m,{role:'sys',text:'Assistant not configured yet. Add api/proxy.js + ANTHROPIC_API_KEY in Vercel (status '+res.status+').'}]);setBusy(false);return;}
+      const data=await res.json();
+      let raw=((data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||(Array.isArray(data.content)?data.content.filter(b=>b.type==='text').map(b=>b.text).join(''):'')||'').trim();
+      raw=raw.replace(/```json/g,'').replace(/```/g,'').trim();
+      let parsed=null;try{parsed=JSON.parse(raw);}catch(e){parsed=null;}
+      if(!parsed||!parsed.updates){setMsgs(m=>[...m,{role:'sys',text:'I could not parse that into updates. Try rephrasing with the department and metric.'}]);setBusy(false);return;}
+      let applied=0;
+      parsed.updates.forEach(u=>{
+        const sec=SECTIONS.find(s=>s.id===u.section);
+        if(!sec)return;
+        const it=sec.items.find(x=>x.id===u.item);
+        if(!it)return;
+        const fld=['prevWeek','comingWeek','status','comments'].indexOf(u.field)>=0?u.field:'prevWeek';
+        updateCell(u.section,u.item,fld,String(u.value),profile&&profile.email);
+        applied++;
+      });
+      const conf=parsed.reply||('Applied '+applied+' update(s).');
+      setMsgs(m=>[...m,{role:'ai',text:conf,count:applied}]);
+    }catch(e){
+      setMsgs(m=>[...m,{role:'sys',text:'Error: '+e.message}]);
+    }
+    setBusy(false);
+  };
+
+  return html`
+    <div>
+      ${open?html`<div style="position:fixed;bottom:90px;right:24px;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 130px);background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.18);z-index:300;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:#6135FC;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">K</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700">Klaim Assistant</div>
+            <div style="font-size:10px;color:var(--muted)">Speak or type an update</div>
+          </div>
+          <button class="icon-btn" onClick=${()=>setOpen(false)}>X</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px">
+          ${msgs.length===0?html`<div style="font-size:12px;color:var(--faint);line-height:1.6">Tell me what happened this week and I'll update the right departments. For example:<br/><br/><em>"Oman got the FSA sandbox approval, escrow with Sohar is in progress. Sales signed 2 MRPAs this week."</em></div>`:html`<div></div>`}
+          ${msgs.map((m,mi)=>{
+            const isU=m.role==='user';const isSys=m.role==='sys';
+            const bg=isU?'#6135FC':isSys?'#fef2f2':'#f0fdfa';
+            const fc=isU?'#fff':isSys?'#dc2626':'#0f766e';
+            const al=isU?'flex-end':'flex-start';
+            return html`<div key=${'m'+mi} style=${'align-self:'+al+';max-width:85%;background:'+bg+';color:'+fc+';padding:8px 12px;border-radius:12px;font-size:12px;line-height:1.5;white-space:pre-wrap'}>${m.text}</div>`;
+          })}
+          ${busy?html`<div style="align-self:flex-start;font-size:12px;color:var(--muted)">Thinking...</div>`:html`<div></div>`}
+        </div>
+        <div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:6px;align-items:flex-end">
+          <button onClick=${listening?stopVoice:startVoice} title="Voice input" style=${'width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;font-size:15px;background:'+(listening?'#dc2626':'var(--surface)')+';color:'+(listening?'#fff':'var(--muted)')}>${listening?'\u25a0':'\ud83c\udfa4'}</button>
+          <textarea value=${input} onInput=${e=>setInput(e.target.value)} rows="1" placeholder="Type or speak an update..." onKeyDown=${e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}} style="flex:1;resize:none;font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:10px;padding:9px 10px;max-height:80px"></textarea>
+          <button onClick=${send} disabled=${busy||!input.trim()} style="width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;background:#6135FC;color:#fff;font-size:15px">\u2191</button>
+        </div>
+      </div>`:html`<div></div>`}
+      <button onClick=${()=>setOpen(o=>!o)} title="Klaim Assistant" style=${'position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;z-index:300;background:#6135FC;color:#fff;font-size:22px;box-shadow:0 6px 20px rgba(97,53,252,.4);display:flex;align-items:center;justify-content:center'}>${open?'\u2715':'\u2728'}</button>
+    </div>`;
+}
+
+function App(){
+  const{user,profile,loading,error,signIn,signOut,updateProfile}=useAuth();
+  const curQ=()=>{const m=new Date().getMonth();return 'Q'+(Math.floor(m/3)+1)+'-'+new Date().getFullYear();};
+  const[activeOkrs]=useOKR(curQ());
+  const[weekId,setWeekId]=useState(isoWeek());
+  const[pulseData,updateCell,pulseLoading]=usePulse(weekId);
+  const[custom,addCustom,removeCustom]=useCustom();
+  const[tasks,addTask,updTask,delTask]=useTasks();
+  const[fus,addFu,updFu,delFu]=useFUs();
+
+  if(loading) return html`
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;color:var(--muted);font-size:13px">
+      Loading...
+    </div>`;
+
+  if(!user) return html`<${LoginScreen} onSignIn=${signIn} error=${error}/>`;
+
+  if(!profile?.name) return html`
+    <${ProfileSetup} profile=${profile} onSave=${updateProfile} onSignOut=${signOut}/>`;
+
+  const isAdmin=profile?.role==='admin';
+  const pendingFU=fus.filter(f=>f.status==='Pending').length;
+  const openTasks=tasks.filter(t=>!t.done).length;
+
+  const SECTIONS_NAV={
+    weekly:['pulse','meetings',...(isAdmin?['people','fus']:[])],
+    monthly:isAdmin?['dash','memo']:['dash'],
+    quarterly:['okr']
+  };
+  const NAV_LABELS={
+    pulse:'Weekly Pulse',meetings:'Weekly Notes',people:'People & Tasks',
+    fus:'Follow-ups',memo:'Generate Memo',dash:'Monthly Dashboard',okr:'Quarterly OKR'
+  };
+  const NAV_BADGES={people:openTasks,fus:pendingFU};
+  const[period,setPeriod]=useState('weekly');
+  const[tab,setTab]=useState('pulse');
+  const switchPeriod=(p)=>{setPeriod(p);setTab(SECTIONS_NAV[p][0]);};
+  const[menuOpen,setMenuOpen]=useState(false);
+  const[showUsers,setShowUsers]=useState(false);
+  const roleLabel=profile?.role==='admin'?'Admin':profile?.role==='head'?'Dept Head':'Viewer';
+  const roleClr=profile?.role==='admin'?'#6135FC':profile?.role==='head'?'#0d9488':'#6b7280';
+
+  return html`
+    <div>
+      <div class="top-bar">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span class="logo">Klaim<em style="color:var(--accent);font-style:normal">.</em></span>
+          <div style="display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:2px">
+            ${['weekly','monthly','quarterly'].map(p=>html`
+              <button key=${p} onClick=${()=>switchPeriod(p)}
+                style="font-size:12px;font-weight:${period===p?'700':'500'};padding:5px 14px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;background:${period===p?'#fff':'transparent'};color:${period===p?'#111827':'var(--muted)'};box-shadow:${period===p?'0 1px 3px rgba(0,0,0,.1)':'none'};text-transform:capitalize;transition:all .15s">
+                ${p==='weekly'?'Weekly':p==='monthly'?'Monthly':'Quarterly'}
+              </button>`)}
+          </div>
+        </div>
+        ${(tab==='pulse')&&html`<div class="week-nav">
+          <button class="btn-nav" onClick=${()=>setWeekId(w=>shiftWeek(w,-1))}>Prev</button>
+          <span class="week-lbl">${weekLabel(weekId)}</span>
+          <button class="btn-nav" onClick=${()=>setWeekId(w=>shiftWeek(w,1))}>Next</button>
+          <button class="btn-now" onClick=${()=>setWeekId(isoWeek())}>Now</button>
+          <button class="btn-nav" style="border-color:var(--accent);color:var(--accent)" onClick=${()=>downloadWeeklyRecap(weekId,pulseData,custom,tasks)} title="Download weekly recap">↓ Recap</button>
+        </div>`}
+        <div class="user-bar" style="position:relative">
+          <button onClick=${()=>setMenuOpen(o=>!o)} style="display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 6px;border-radius:8px">
+            <div class="avatar">${initials(profile.name)}</div>
+            <div style="text-align:left">
+              <div style="font-size:13px;font-weight:500">${profile.name}</div>
+              <div style="font-size:11px;color:var(--muted)">${profile.email}</div>
+            </div>
+            <span style="font-size:10px;color:var(--faint);margin-left:2px">${menuOpen?'▲':'▼'}</span>
+          </button>
+          ${menuOpen?html`<div style="position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:220px;z-index:50;overflow:hidden">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
+              <div style="font-size:13px;font-weight:600">${profile.name}</div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:5px">${profile.email}</div>
+              <span style="font-size:10px;padding:2px 8px;border-radius:999px;color:#fff;font-weight:600;background:${roleClr}">${roleLabel}</span>
+            </div>
+            ${isAdmin?html`<button onClick=${()=>{setShowUsers(true);setMenuOpen(false);}} style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:13px;color:#111827">User Management</button>`:html`<span></span>`}
+            <button onClick=${()=>{setMenuOpen(false);signOut();}} style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:inherit;font-size:13px;color:var(--err)">Sign out</button>
+          </div>`:html`<span></span>`}
+        </div>
+      </div>
+
+      <div class="tabs">
+        ${SECTIONS_NAV[period].map(id=>html`
+          <button key=${id} class="tab ${tab===id?'on':''}" onClick=${()=>setTab(id)}>
+            ${NAV_LABELS[id]}
+            ${(NAV_BADGES[id]||0)>0&&html`<span class="tab-ct">${NAV_BADGES[id]}</span>`}
+          </button>`)}
+      </div>
+
+      ${showUsers?html`<${UserManagement} profile=${profile} onClose=${()=>setShowUsers(false)}/>`:html`<span></span>`}
+      <${AIAssistant} pulseData=${pulseData} updateCell=${updateCell} profile=${profile} weekId=${weekId} okrs=${activeOkrs}/>
+      <div class="page">
+        ${tab==='pulse'&&html`
+          <${WeeklyPulse}
+            weekId=${weekId} data=${pulseData} updateCell=${updateCell}
+            custom=${custom} addCustom=${addCustom} removeCustom=${removeCustom}
+            loading=${pulseLoading} profile=${profile} okrs=${activeOkrs}/>`}
+        ${tab==='dash'&&html`<${Dashboard} custom=${custom} tasks=${tasks} okrs=${activeOkrs}/>`}
+        ${tab==='okr'&&html`<${OKRView} pulseData=${pulseData} profile=${profile} weekId=${weekId}/>`}
+        ${tab==='people'&&isAdmin&&html`
+          <${PeopleTasks} tasks=${tasks} addTask=${addTask} updTask=${updTask} delTask=${delTask} profile=${profile}/>`}
+        ${tab==='fus'&&isAdmin&&html`
+          <${FollowUps} fus=${fus} addFu=${addFu} updFu=${updFu} delFu=${delFu}/>`}
+        ${tab==='meetings'&&html`<${MeetingNotes} weekId=${weekId} updateCell=${updateCell} addTask=${addTask} profile=${profile}/>`}
+        ${tab==='memo'&&isAdmin&&html`
+          <${MemoGen} custom=${custom} tasks=${tasks} okrs=${activeOkrs}/>`}
+      </div>
+    </div>`;
+}
+
+
+class ErrorBoundary extends window.preact.Component{
+  constructor(p){super(p);this.state={err:null};}
+  componentDidCatch(e){this.setState({err:e});}
+  render(){
+    if(this.state.err)return html`<div style="padding:2rem;color:#dc2626;font-family:monospace;font-size:12px;white-space:pre-wrap;max-width:800px"><strong>Error (share this with your developer):</strong><br/>${this.state.err.message}<br/>${this.state.err.stack}</div>`;
+    return this.props.children;
+  }
+}
+preactRender(html`<${ErrorBoundary}><${App}/></${ErrorBoundary}>`,document.getElementById('root'))
+
+</script>
+</body>
+</html>
