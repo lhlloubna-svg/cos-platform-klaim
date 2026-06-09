@@ -1,31 +1,32 @@
-// Vercel serverless function — keeps the Anthropic API key server-side.
+// Vercel serverless function — Ollama Cloud proxy (keeps the API key server-side).
 // Deploy path in your repo: /api/proxy.js
-// Set ANTHROPIC_API_KEY as an Environment Variable in Vercel (Settings → Environment Variables).
+// Set OLLAMA_API_KEY as an Environment Variable in Vercel (Settings → Environment Variables).
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OLLAMA_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in Vercel environment variables' });
+    return res.status(500).json({ error: 'OLLAMA_API_KEY not set in Vercel environment variables' });
   }
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Ollama Cloud is OpenAI-compatible at https://ollama.com/v1
+    const response = await fetch('https://ollama.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': 'Bearer ' + apiKey,
       },
       body: JSON.stringify({
-        model: body.model || 'claude-sonnet-4-20250514',
-        max_tokens: body.max_tokens || 1500,
+        model: body.model || 'gpt-oss:120b-cloud',
         messages: body.messages || [],
+        max_tokens: body.max_tokens || 1500,
+        stream: false,
       }),
     });
 
